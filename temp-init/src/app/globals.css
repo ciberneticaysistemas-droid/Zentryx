@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/* ── Zentryx Design Tokens ─────────────────────────────────── */
+:root {
+  --zx-bg:            #09090B;
+  --zx-surface:       #111114;
+  --zx-surface-2:     #18181C;
+  --zx-surface-3:     #1F1F24;
+  --zx-border:        #26262B;
+  --zx-border-2:      #323238;
+
+  --zx-accent:        #C5A059;
+  --zx-accent-muted:  #C5A05930;
+  --zx-accent-hover:  #D4B46A;
+
+  --zx-text-1:        #F0EDE6;
+  --zx-text-2:        #A8A4A0;
+  --zx-text-3:        #5C5A58;
+
+  --zx-success:       #3D9B6E;
+  --zx-success-muted: #3D9B6E25;
+  --zx-danger:        #D95B45;
+  --zx-danger-muted:  #D95B4525;
+  --zx-warning:       #D4953A;
+  --zx-warning-muted: #D4953A25;
+  --zx-info:          #4A90D9;
+  --zx-info-muted:    #4A90D925;
+}
+
+@theme inline {
+  --color-zx-bg:            var(--zx-bg);
+  --color-zx-surface:       var(--zx-surface);
+  --color-zx-surface-2:     var(--zx-surface-2);
+  --color-zx-surface-3:     var(--zx-surface-3);
+  --color-zx-border:        var(--zx-border);
+  --color-zx-border-2:      var(--zx-border-2);
+  --color-zx-accent:        var(--zx-accent);
+  --color-zx-accent-muted:  var(--zx-accent-muted);
+  --color-zx-accent-hover:  var(--zx-accent-hover);
+  --color-zx-text-1:        var(--zx-text-1);
+  --color-zx-text-2:        var(--zx-text-2);
+  --color-zx-text-3:        var(--zx-text-3);
+  --color-zx-success:       var(--zx-success);
+  --color-zx-success-muted: var(--zx-success-muted);
+  --color-zx-danger:        var(--zx-danger);
+  --color-zx-danger-muted:  var(--zx-danger-muted);
+  --color-zx-warning:       var(--zx-warning);
+  --color-zx-warning-muted: var(--zx-warning-muted);
+  --color-zx-info:          var(--zx-info);
+  --color-zx-info-muted:    var(--zx-info-muted);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+html { color-scheme: dark; }
+
+body {
+  background: var(--zx-bg);
+  color: var(--zx-text-1);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--zx-surface); }
+::-webkit-scrollbar-thumb {
+  background: var(--zx-border-2);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--zx-accent); }
+
+/* ── Utility classes ─────────────────────────────────────── */
+.zx-row:hover { background: var(--zx-surface-2); }
+.zx-card:hover { border-color: var(--zx-border-2); }
+.zx-btn-ghost:hover { background: var(--zx-surface-2); }
+
+/* ── Animations ──────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes pulse-gold {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes progressFill {
+  from { width: 0%; }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.animate-shimmer     { animation: shimmer 1.6s infinite; }
+.animate-pulse-gold  { animation: pulse-gold 2s ease-in-out infinite; }
+.animate-fade-in-up  { animation: fadeInUp 0.35s ease-out forwards; }
+.animate-progress    { animation: progressFill 1.2s cubic-bezier(0.4,0,0.2,1) forwards; }
+.animate-spin-slow   { animation: spin-slow 3s linear infinite; }
