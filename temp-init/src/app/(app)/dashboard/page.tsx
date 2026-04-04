@@ -172,7 +172,7 @@ export default function DashboardPage() {
               {absenceCases.map(ac => (
                 <div key={ac.id} className="flex items-center gap-3 p-2 rounded-lg"
                   style={{ background:'var(--zx-surface-2)' }}>
-                  <Avatar initials={ac.employeeName.split(' ').map(n=>n[0]).join('').slice(0,2)} size="xs" />
+                  <Avatar initials={String(ac.employeeName ?? '?').split(' ').map(n=>n[0]).join('').slice(0,2)} size="xs" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium truncate" style={{ color:'var(--zx-text-1)' }}>{ac.employeeName}</p>
                     <p className="text-[10px]" style={{ color:'var(--zx-text-3)' }}>{ac.type}</p>

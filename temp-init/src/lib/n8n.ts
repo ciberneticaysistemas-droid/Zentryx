@@ -1,4 +1,6 @@
-const N8N_BASE = 'https://alejandromm.app.n8n.cloud/webhook';
+// All n8n calls go through internal API proxy routes (/api/n8n/...)
+// to avoid CORS issues when calling n8n.cloud from the browser.
+// The proxy routes forward requests server-side (Node.js has no CORS restrictions).
 
 // ── Tipos de respuesta ─────────────────────────────────────────────────────────
 
@@ -18,11 +20,11 @@ export interface RecruitmentResponse {
 }
 
 export interface PQRResponse {
-  success:          boolean;
-  suggestion:       string;
+  success:           boolean;
+  suggestion:        string;
   suggestedPriority: 'low' | 'medium' | 'high';
-  estimatedDays:    number;
-  category:         string;
+  estimatedDays:     number;
+  category:          string;
 }
 
 export interface AbsenceResponse {
@@ -32,36 +34,36 @@ export interface AbsenceResponse {
   summary:    string;
 }
 
-// ── Utilidad de fetch ──────────────────────────────────────────────────────────
+export interface SendDocumentResponse {
+  success: boolean;
+  message: string;
+}
 
-async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
-  const res = await fetch(`${N8N_BASE}/${path}`, {
+// ── Utilidad de fetch (a través del proxy interno) ─────────────────────────────
+
+async function post<T>(proxyPath: string, body: Record<string, unknown>): Promise<T> {
+  const res = await fetch(proxyPath, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
 
   if (!res.ok) {
-    throw new Error(`n8n error ${res.status}`);
+    const errData = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error((errData as { error?: string })?.error ?? `Error ${res.status}`);
   }
 
-  // Se usa text() + JSON.parse() para evitar problemas de codificacion
-  // en algunos entornos donde el Content-Type del response omite el charset
-  const raw = await res.text();
-  return JSON.parse(raw) as T;
+  return res.json() as Promise<T>;
 }
 
 // ── Funciones publicas ─────────────────────────────────────────────────────────
 
 export async function analyzeRecruitment(
-  jobTitle:        string,
-  jobDescription:  string,
-  candidates:      { name: string; email: string; cvText: string }[],
+  jobTitle:       string,
+  jobDescription: string,
+  candidates:     { name: string; email: string; cvText: string }[],
 ): Promise<RecruitmentResponse> {
-  return post<RecruitmentResponse>('zentryx/recruitment/analyze', {
+  return post<RecruitmentResponse>('/api/n8n/recruitment', {
     jobTitle,
     jobDescription,
     candidates,
@@ -76,7 +78,7 @@ export async function analyzePQR(params: {
   type:        string;
   priority:    string;
 }): Promise<PQRResponse> {
-  return post<PQRResponse>('zentryx/pqr/analyze', params);
+  return post<PQRResponse>('/api/n8n/pqr', params);
 }
 
 export async function analyzeAbsence(params: {
@@ -86,12 +88,19 @@ export async function analyzeAbsence(params: {
   endDate:             string;
   documentDescription: string;
 }): Promise<AbsenceResponse> {
-  return post<AbsenceResponse>('zentryx/absences/analyze', params);
+  return post<AbsenceResponse>('/api/n8n/absences', params);
+}
+
+export async function sendDocument(params: {
+  recipientEmail: string;
+  subject:        string;
+  docContent:     string;
+}): Promise<SendDocumentResponse> {
+  return post<SendDocumentResponse>('/api/n8n/communications', params);
 }
 
 // ── Helper: leer archivo como texto ───────────────────────────────────────────
-// Funciona bien con .txt; para PDF/DOC devuelve solo el nombre del archivo
-// para que la IA al menos tenga contexto del tipo de documento cargado.
+// Works well with .txt; for PDF/DOC returns just the filename as context.
 
 export function readFileAsText(file: File): Promise<string> {
   return new Promise((resolve) => {
@@ -99,7 +108,6 @@ export function readFileAsText(file: File): Promise<string> {
 
     reader.onload = (e) => {
       const text = (e.target?.result as string) ?? '';
-      // Ratio de caracteres imprimibles — PDFs binarios quedan en <0.6
       const printable = (text.match(/[\x20-\x7E\n\r\t\u00C0-\u024F]/g) ?? []).length;
       const ratio = text.length > 0 ? printable / text.length : 0;
 

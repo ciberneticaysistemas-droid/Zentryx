@@ -155,7 +155,7 @@ export default function ContractsPage() {
                 <button className="w-full flex items-center gap-4 px-4 py-3 text-left transition-colors"
                   style={{ background: isOpen ? 'var(--zx-surface-2)' : 'transparent' }}
                   onClick={() => toggleExpand(c.id)}>
-                  <Avatar initials={c.employeeName.split(' ').map(n=>n[0]).join('').slice(0,2)} size="sm" />
+                  <Avatar initials={String(c.employeeName ?? '?').split(' ').map(n=>n[0]).join('').slice(0,2)} size="sm" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold" style={{ color:'var(--zx-text-1)' }}>{c.employeeName}</p>
                     <p className="text-xs truncate" style={{ color:'var(--zx-text-3)' }}>

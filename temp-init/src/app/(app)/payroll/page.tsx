@@ -128,7 +128,7 @@ export default function PayrollPage() {
                       style={{ borderBottom: i < records.length-1 ? '1px solid var(--zx-border)' : 'none' }}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Avatar initials={r.employeeName.split(' ').map(n=>n[0]).join('').slice(0,2)} size="xs" />
+                          <Avatar initials={String(r.employeeName ?? '?').split(' ').map(n=>n[0]).join('').slice(0,2)} size="xs" />
                           <span className="font-medium whitespace-nowrap" style={{ color:'var(--zx-text-1)' }}>{r.employeeName}</span>
                         </div>
                       </td>

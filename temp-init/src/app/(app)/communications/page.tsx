@@ -5,7 +5,8 @@ import Header from '@/components/layout/Header';
 import Button from '@/components/ui/Button';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
 import { employees } from '@/lib/data';
-import { FileText, AlertTriangle, Brain, Download, Send, RefreshCw, CheckCircle } from 'lucide-react';
+import { Loader2, FileText, AlertTriangle, Brain, Download, Send, RefreshCw, CheckCircle, Mail } from 'lucide-react';
+import { sendDocument } from '@/lib/n8n';
 
 const DOC_TYPES = [
   { id:'resignation', label:'Aviso de Renuncia',       color:'var(--zx-info)',    bg:'var(--zx-info-muted)',    icon:<FileText size={20} /> },
@@ -124,9 +125,12 @@ export default function CommunicationsPage() {
   const [preview, setPreview]     = useState('');
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading]     = useState(false);
+  const [sending, setSending]     = useState(false);
+  const [emailTo, setEmailTo]     = useState(() => employees.filter(e => e.status !== 'inactive')[0]?.email ?? '');
   const { toasts, toast, dismiss } = useToast();
 
-  const emp = employees.filter(e => e.status !== 'inactive')[empIdx];
+  const activeEmps = employees.filter(e => e.status !== 'inactive');
+  const emp = activeEmps[empIdx];
 
   const generate = () => {
     setLoading(true);
@@ -156,6 +160,30 @@ export default function CommunicationsPage() {
     a.href = url; a.download = `${docType}_${emp.name.replace(/\s+/g,'_')}.txt`;
     a.click(); URL.revokeObjectURL(url);
     toast('success', 'Documento descargado.');
+  };
+
+  const sendByEmail = async () => {
+    if (!preview) { toast('error', 'Primero genera el documento.'); return; }
+    if (!emailTo.trim()) { toast('error', 'Ingresa un correo destinatario.'); return; }
+    setSending(true);
+    try {
+      const docLabels: Record<string, string> = {
+        resignation: 'Aviso de Renuncia',
+        warning:     'Acta de Amonestacion',
+        certificate: 'Certificado Laboral',
+        memo:        'Memorando Interno',
+      };
+      await sendDocument({
+        recipientEmail: emailTo.trim(),
+        subject:        `${docLabels[docType] ?? 'Documento'} - ${emp.name}`,
+        docContent:     preview,
+      });
+      toast('success', `Documento enviado a ${emailTo.trim()}`);
+    } catch {
+      toast('error', 'Error al enviar. Verifica que el flujo n8n este activo y Gmail configurado.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -210,7 +238,7 @@ export default function CommunicationsPage() {
 
             <div>
               <label className="text-[11px] font-medium block mb-1" style={{ color:'var(--zx-text-3)' }}>Empleado</label>
-              <select value={empIdx} onChange={e => { setEmpIdx(Number(e.target.value)); setGenerated(false); }}
+              <select value={empIdx} onChange={e => { const i = Number(e.target.value); setEmpIdx(i); setEmailTo(activeEmps[i]?.email ?? ''); setGenerated(false); }}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ background:'var(--zx-surface-2)', border:'1px solid var(--zx-border-2)', color:'var(--zx-text-1)' }}>
                 {employees.filter(e => e.status !== 'inactive').map((e, i) => (
@@ -274,6 +302,22 @@ export default function CommunicationsPage() {
                 </div>
               )}
             </div>
+            {generated && (
+              <div className="flex items-center gap-2 mb-3">
+                <Mail size={12} style={{ color:'var(--zx-accent)', flexShrink:0 }} />
+                <input
+                  value={emailTo}
+                  onChange={e => setEmailTo(e.target.value)}
+                  placeholder="Correo del destinatario"
+                  className="flex-1 px-2 py-1.5 rounded-lg text-xs outline-none"
+                  style={{ background:'var(--zx-surface-2)', border:'1px solid var(--zx-border-2)', color:'var(--zx-text-1)' }}
+                />
+                <Button variant="primary" size="sm" icon={sending ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
+                  loading={sending} onClick={sendByEmail}>
+                  Enviar
+                </Button>
+              </div>
+            )}
             <div className="flex-1 overflow-auto rounded-lg p-4 font-mono text-[11px] leading-relaxed whitespace-pre-line"
               style={{ background:'var(--zx-surface-2)', color: preview ? 'var(--zx-text-2)' : 'var(--zx-text-3)', minHeight:'320px' }}>
               {preview || (

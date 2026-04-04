@@ -274,7 +274,7 @@ export default function RecruitmentPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
-                      <Avatar initials={c.name.split(' ').map(n=>n[0]).join('').slice(0,2)} />
+                      <Avatar initials={String(c.name ?? '?').split(' ').map(n=>n[0]).join('').slice(0,2)} />
                       <div>
                         <p className="text-sm font-semibold" style={{ color:'var(--zx-text-1)' }}>{c.name}</p>
                         <p className="text-xs" style={{ color:'var(--zx-text-3)' }}>

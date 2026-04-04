@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
-import { pqrCases as initialCases } from '@/lib/data';
 import { formatDate } from '@/lib/utils';
 import type { PQRCase, PQRType, PQRPriority } from '@/types';
 import { analyzePQR } from '@/lib/n8n';
@@ -31,26 +30,60 @@ const priorityMap: Record<string, { label:string; color:string }> = {
 
 const DEPARTMENTS = ['RRHH','Tecnología','Finanzas','Legal','Ventas','Operaciones'];
 
-export default function PQRPage() {
-  const [cases, setCases]           = useState(initialCases);
-  const [editingId, setEditingId]   = useState<string | null>(null);
-  const [editText, setEditText]     = useState('');
-  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
-  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
-  const [showNew, setShowNew]       = useState(false);
-  const { toasts, toast, dismiss }  = useToast();
+async function fetchCases(): Promise<PQRCase[]> {
+  const res = await fetch('/api/cases/pqr');
+  if (!res.ok) throw new Error('fetch error');
+  return res.json();
+}
 
-  // New PQR form state
+async function persistCase(c: Partial<PQRCase> & { subject: string; submittedBy: string }): Promise<PQRCase> {
+  const res = await fetch('/api/cases/pqr', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(c),
+  });
+  const data = await res.json();
+  return data.case as PQRCase;
+}
+
+async function patchCase(id: string, patch: Partial<Pick<PQRCase, 'status' | 'aiSuggestion' | 'priority'>>): Promise<void> {
+  await fetch(`/api/cases/pqr/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+}
+
+export default function PQRPage() {
+  const [cases, setCases]               = useState<PQRCase[]>([]);
+  const [editingId, setEditingId]       = useState<string | null>(null);
+  const [editText, setEditText]         = useState('');
+  const [appliedIds, setAppliedIds]     = useState<Set<string>>(new Set());
+  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
+  const [showNew, setShowNew]           = useState(false);
+  const { toasts, toast, dismiss }      = useToast();
+
   const [form, setForm] = useState({
     subject: '', description: '', submittedBy: '', department: 'RRHH',
     type: 'pregunta' as PQRType, priority: 'medium' as PQRPriority,
   });
 
+  const refresh = useCallback(() => {
+    fetchCases().then(setCases).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, 60_000);
+    return () => clearInterval(id);
+  }, [refresh]);
+
   const applyAI = (id: string, suggestion: string) => {
-    setCases(prev => prev.map(p =>
-      p.id === id ? { ...p, status: 'in-progress' as const, aiSuggestion: suggestion } : p
+    setCases(prev => prev.map((p): PQRCase =>
+      p.id === id ? { ...p, status: 'in-progress', aiSuggestion: suggestion } : p
     ));
     setAppliedIds(prev => new Set([...prev, id]));
+    patchCase(id, { status: 'in-progress', aiSuggestion: suggestion }).catch(() => {});
     toast('success', 'Sugerencia IA aplicada. Estado actualizado a "En Proceso".');
   };
 
@@ -60,27 +93,29 @@ export default function PQRPage() {
   };
 
   const saveEdit = (id: string) => {
-    setCases(prev => prev.map(p =>
+    setCases(prev => prev.map((p): PQRCase =>
       p.id === id ? { ...p, aiSuggestion: editText } : p
     ));
+    patchCase(id, { aiSuggestion: editText }).catch(() => {});
     setEditingId(null);
     toast('success', 'Respuesta actualizada correctamente.');
   };
 
   const markResolved = (id: string) => {
-    setCases(prev => prev.map(p =>
-      p.id === id ? { ...p, status: 'resolved' as const } : p
+    setCases(prev => prev.map((p): PQRCase =>
+      p.id === id ? { ...p, status: 'resolved' } : p
     ));
+    patchCase(id, { status: 'resolved' }).catch(() => {});
     toast('success', 'PQR marcada como resuelta.');
   };
 
-  const submitNew = () => {
+  const submitNew = async () => {
     if (!form.subject || !form.description || !form.submittedBy) {
       toast('error', 'Por favor completa todos los campos requeridos.');
       return;
     }
-    const newCase: PQRCase = {
-      id: `PQR${String(cases.length + 1).padStart(3,'0')}`,
+    const today = new Date().toISOString().split('T')[0];
+    const draft: Partial<PQRCase> & { subject: string; submittedBy: string } = {
       type: form.type,
       subject: form.subject,
       description: form.description,
@@ -88,37 +123,46 @@ export default function PQRPage() {
       department: form.department,
       status: 'open',
       priority: form.priority,
-      createdAt: new Date().toISOString().split('T')[0],
-      aiSuggestion: undefined,
+      createdAt: today,
     };
-    setCases(prev => [newCase, ...prev]);
+
+    const saved = await persistCase(draft);
+    setCases(prev => [saved, ...prev]);
     setShowNew(false);
     setForm({ subject:'', description:'', submittedBy:'', department:'RRHH', type:'pregunta', priority:'medium' });
-    toast('success', `PQR "${newCase.subject}" creada. Generando sugerencia IA...`);
+    toast('success', `PQR "${saved.subject}" creada. Generando sugerencia IA...`);
 
-    // Analisis asincrono — no bloquea el flujo
-    setAnalyzingIds(prev => new Set([...prev, newCase.id]));
+    setAnalyzingIds(prev => new Set([...prev, saved.id]));
     analyzePQR({
-      subject:     newCase.subject,
-      description: newCase.description,
-      submittedBy: newCase.submittedBy,
-      department:  newCase.department,
-      type:        newCase.type,
-      priority:    newCase.priority,
+      subject:     saved.subject,
+      description: saved.description,
+      submittedBy: saved.submittedBy,
+      department:  saved.department,
+      type:        saved.type,
+      priority:    saved.priority,
     })
       .then(result => {
-        setCases(prev => prev.map(p =>
-          p.id === newCase.id
-            ? { ...p, aiSuggestion: result.suggestion, priority: result.suggestedPriority }
+        const suggestion = typeof result.suggestion === 'string'
+          ? result.suggestion
+          : (result.suggestion as Record<string,unknown>)?.value as string
+            ?? (result.suggestion as Record<string,unknown>)?.text as string
+            ?? String(result.suggestion ?? '');
+        const sugPriority: PQRPriority = (['low','medium','high'] as const).includes(
+          result.suggestedPriority as PQRPriority
+        ) ? (result.suggestedPriority as PQRPriority) : 'medium';
+        setCases(prev => prev.map((p): PQRCase =>
+          p.id === saved.id
+            ? { ...p, aiSuggestion: suggestion, priority: sugPriority }
             : p
         ));
+        patchCase(saved.id, { aiSuggestion: suggestion, priority: sugPriority }).catch(() => {});
         toast('success', 'Sugerencia IA lista para la PQR.');
       })
       .catch(() => {
         toast('error', 'No se pudo obtener la sugerencia IA. Verifica que el flujo n8n este activo.');
       })
       .finally(() => {
-        setAnalyzingIds(prev => { const s = new Set(prev); s.delete(newCase.id); return s; });
+        setAnalyzingIds(prev => { const s = new Set(prev); s.delete(saved.id); return s; });
       });
   };
 
@@ -134,10 +178,10 @@ export default function PQRPage() {
         {/* KPI row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label:'Total casos',   value:cases.length, color:'var(--zx-accent)' },
-            { label:'Activos',       value:open,         color:'var(--zx-warning)' },
-            { label:'Resueltos',     value:solved,       color:'var(--zx-success)' },
-            { label:'Alta prioridad',value:cases.filter(p=>p.priority==='high').length, color:'var(--zx-danger)' },
+            { label:'Total casos',    value:cases.length,                                       color:'var(--zx-accent)' },
+            { label:'Activos',        value:open,                                               color:'var(--zx-warning)' },
+            { label:'Resueltos',      value:solved,                                             color:'var(--zx-success)' },
+            { label:'Alta prioridad', value:cases.filter(p => p.priority === 'high').length,    color:'var(--zx-danger)' },
           ].map(s => (
             <div key={s.label} className="rounded-xl p-4" style={{ background:'var(--zx-surface)', border:'1px solid var(--zx-border)' }}>
               <p className="text-2xl font-bold tabular-nums" style={{ color:s.color }}>{s.value}</p>
@@ -157,10 +201,10 @@ export default function PQRPage() {
         {/* Cases */}
         <div className="space-y-3">
           {cases.map(p => {
-            const tm = typeMap[p.type];
-            const sm = statusMap[p.status];
-            const pm = priorityMap[p.priority];
-            const isEditing = editingId === p.id;
+            const tm = typeMap[p.type] ?? typeMap['queja'];
+            const sm = statusMap[p.status] ?? statusMap['open'];
+            const pm = priorityMap[p.priority] ?? priorityMap['medium'];
+            const isEditing  = editingId === p.id;
             const wasApplied = appliedIds.has(p.id);
 
             return (
@@ -261,8 +305,8 @@ export default function PQRPage() {
       <Modal open={showNew} onClose={() => setShowNew(false)} title="Nueva PQR" size="md">
         <div className="space-y-3">
           {[
-            { label:'Asunto *', field:'subject', type:'input', placeholder:'Ej: Solicitud de certificado laboral' },
-            { label:'Nombre del solicitante *', field:'submittedBy', type:'input', placeholder:'Nombre completo' },
+            { label:'Asunto *', field:'subject', placeholder:'Ej: Solicitud de certificado laboral' },
+            { label:'Nombre del solicitante *', field:'submittedBy', placeholder:'Nombre completo' },
           ].map(({ label, field, placeholder }) => (
             <div key={field}>
               <label className="text-[11px] font-medium block mb-1" style={{ color:'var(--zx-text-3)' }}>{label}</label>
@@ -275,11 +319,11 @@ export default function PQRPage() {
           ))}
 
           <div className="grid grid-cols-3 gap-2">
-            {[
-              { label:'Tipo', field:'type', options:[['pregunta','Pregunta'],['queja','Queja'],['reclamo','Reclamo']] },
-              { label:'Prioridad', field:'priority', options:[['low','Baja'],['medium','Media'],['high','Alta']] },
-              { label:'Área', field:'department', options: DEPARTMENTS.map(d => [d,d]) },
-            ].map(({ label, field, options }) => (
+            {([
+              { label:'Tipo',      field:'type',       options:[['pregunta','Pregunta'],['queja','Queja'],['reclamo','Reclamo']] as [string,string][] },
+              { label:'Prioridad', field:'priority',   options:[['low','Baja'],['medium','Media'],['high','Alta']] as [string,string][] },
+              { label:'Área',      field:'department', options: DEPARTMENTS.map((d): [string,string] => [d,d]) },
+            ]).map(({ label, field, options }) => (
               <div key={field}>
                 <label className="text-[11px] font-medium block mb-1" style={{ color:'var(--zx-text-3)' }}>{label}</label>
                 <select value={(form as Record<string, string>)[field]}

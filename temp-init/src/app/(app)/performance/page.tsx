@@ -133,7 +133,7 @@ export default function PerformancePage() {
               <div key={pr.employeeId} className="rounded-xl p-4"
                 style={{ background:'var(--zx-surface)', border:`1px solid ${isEditing ? 'var(--zx-accent)' : 'var(--zx-border)'}` }}>
                 <div className="flex items-center gap-3">
-                  <Avatar initials={pr.employeeName.split(' ').map(n=>n[0]).join('').slice(0,2)} size="md" />
+                  <Avatar initials={String(pr.employeeName ?? '?').split(' ').map(n=>n[0]).join('').slice(0,2)} size="md" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold" style={{ color:'var(--zx-text-1)' }}>{pr.employeeName}</p>
                     <p className="text-xs" style={{ color:'var(--zx-text-3)' }}>{pr.department} · {pr.period}</p>

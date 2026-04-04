@@ -1,17 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import Badge from '@/components/ui/Badge';
 import Avatar from '@/components/ui/Avatar';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
-import { absenceCases as initialCases } from '@/lib/data';
 import { formatDate } from '@/lib/utils';
 import { analyzeAbsence, readFileAsText } from '@/lib/n8n';
-import type { AbsenceCase, AbsenceVerdict } from '@/types';
+import type { AbsenceCase } from '@/types';
 import {
   CheckCircle2, XCircle, AlertCircle, Clock,
-  Brain, Upload, FileText, X, Info,
+  Brain, Upload, FileText, Info,
 } from 'lucide-react';
 
 const verdictMap: Record<string, { label:string; variant:'success'|'danger'|'warning'|'default'; icon:React.ReactNode }> = {
@@ -42,14 +41,38 @@ function ConfidenceBar({ value }: { value: number }) {
   );
 }
 
+async function fetchCases(): Promise<AbsenceCase[]> {
+  const res = await fetch('/api/cases/absences');
+  if (!res.ok) throw new Error('fetch error');
+  return res.json();
+}
+
+async function persistCase(c: AbsenceCase): Promise<void> {
+  await fetch('/api/cases/absences', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(c),
+  });
+}
+
 export default function AbsencesPage() {
-  const [cases, setCases]             = useState<AbsenceCase[]>(initialCases);
+  const [cases, setCases]             = useState<AbsenceCase[]>([]);
   const [progress, setProgress]       = useState(0);
   const [stage, setStage]             = useState<'idle'|'uploading'|'analyzing'|'done'>('idle');
   const [pendingFile, setPendingFile]  = useState('');
   const [empName, setEmpName]         = useState('');
   const [absenceType, setAbsenceType] = useState(ABSENCE_TYPES[0]);
   const { toasts, toast, dismiss }    = useToast();
+
+  const refresh = useCallback(() => {
+    fetchCases().then(setCases).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, 60_000);
+    return () => clearInterval(id);
+  }, [refresh]);
 
   const handleFile = async (file: File) => {
     setPendingFile(file.name);
@@ -86,8 +109,22 @@ export default function AbsencesPage() {
       setProgress(100);
       setStage('done');
 
-      const verdict = (['accepted', 'rejected', 'review'] as const).includes(result.verdict as 'accepted' | 'rejected' | 'review')
-        ? result.verdict as 'accepted' | 'rejected' | 'review'
+      // Coerce all n8n fields to plain primitives (n8n sometimes returns enriched objects)
+      const safeStr = (v: unknown, fb = '') =>
+        typeof v === 'string' ? v
+        : typeof v === 'object' && v !== null
+          ? String((v as Record<string,unknown>).value ?? (v as Record<string,unknown>).text ?? fb)
+          : fb;
+      const safeNum = (v: unknown, fb: number): number =>
+        typeof v === 'number' ? v
+        : typeof v === 'string' ? (parseFloat(v) || fb)
+        : typeof v === 'object' && v !== null
+          ? safeNum((v as Record<string,unknown>).value, fb)
+          : fb;
+
+      const rawVerdict = safeStr(result.verdict);
+      const verdict = (['accepted', 'rejected', 'review'] as const).includes(rawVerdict as 'accepted' | 'rejected' | 'review')
+        ? rawVerdict as 'accepted' | 'rejected' | 'review'
         : 'review' as const;
 
       const newCase: AbsenceCase = {
@@ -97,12 +134,13 @@ export default function AbsencesPage() {
         date:         today,
         type:         absenceType,
         verdict,
-        confidence:   typeof result.confidence === 'number' ? result.confidence : 70,
-        summary:      result.summary || 'Analisis completado.',
+        confidence:   safeNum(result.confidence, 70),
+        summary:      safeStr(result.summary, 'Analisis completado.'),
         fileName:     file.name,
       };
 
-      setCases(prev => [newCase, ...prev]);
+      await persistCase(newCase);
+      refresh();
       toast('success', `Analisis completo — Veredicto: ${verdictMap[verdict].label}`);
       setTimeout(() => { setStage('idle'); setProgress(0); }, 2000);
     } catch (err) {
@@ -285,7 +323,7 @@ export default function AbsencesPage() {
               <div key={ac.id} className="rounded-xl p-4" style={{ background:'var(--zx-surface)', border:'1px solid var(--zx-border)' }}>
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3">
-                    <Avatar initials={ac.employeeName.split(' ').map(n=>n[0]).join('').slice(0,2)} />
+                    <Avatar initials={String(ac.employeeName ?? '?').split(' ').map(n=>n[0]).join('').slice(0,2)} />
                     <div>
                       <p className="text-sm font-semibold" style={{ color:'var(--zx-text-1)' }}>{ac.employeeName}</p>
                       <p className="text-xs" style={{ color:'var(--zx-text-3)' }}>{ac.type} · {formatDate(ac.date)}</p>
