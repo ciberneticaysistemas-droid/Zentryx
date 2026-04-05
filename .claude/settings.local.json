@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__n8n-mcp__get_node_types",
+      "mcp__n8n-mcp__validate_workflow",
+      "mcp__n8n-mcp__update_workflow",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"%{http_code}\")",
+      "Bash(npm run:*)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(npx cloudflared:*)",
+      "Bash(echo \"tunnel_pid=$!\")",
+      "Bash(curl -s -X GET \"https://greeting-stanley-itunes-valid.trycloudflare.com/api/cases/absences\" -w \"\\\\nHTTP:%{http_code}\")",
+      "Bash(curl -s -X POST https://greeting-stanley-itunes-valid.trycloudflare.com/api/cases/absences -H 'Content-Type: application/json' -d '{\"employeeName\":\"Test Gmail <test@gmail.com>\",\"type\":\"Carta de Renuncia\",\"verdict\":\"review\",\"confidence\":75,\"summary\":\"Prueba de conexion desde n8n via Cloudflare Tunnel\"}' -w '\\\\nHTTP:%{http_code}')"
+    ]
+  }
+}

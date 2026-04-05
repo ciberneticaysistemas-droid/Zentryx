@@ -57,6 +57,7 @@ async function persistCase(c: AbsenceCase): Promise<void> {
 
 export default function AbsencesPage() {
   const [cases, setCases]             = useState<AbsenceCase[]>([]);
+  const [isLoading, setIsLoading]     = useState(true);
   const [progress, setProgress]       = useState(0);
   const [stage, setStage]             = useState<'idle'|'uploading'|'analyzing'|'done'>('idle');
   const [pendingFile, setPendingFile]  = useState('');
@@ -65,7 +66,10 @@ export default function AbsencesPage() {
   const { toasts, toast, dismiss }    = useToast();
 
   const refresh = useCallback(() => {
-    fetchCases().then(setCases).catch(() => {});
+    fetchCases()
+      .then(setCases)
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -317,7 +321,15 @@ export default function AbsencesPage() {
         </h2>
 
         <div className="space-y-3">
-          {cases.map(ac => {
+          {isLoading ? (
+            <div className="rounded-xl p-8 text-center text-xs" style={{ color: 'var(--zx-text-3)', border: '1px dashed var(--zx-border)' }}>
+              Cargando historial de casos...
+            </div>
+          ) : cases.length === 0 ? (
+            <div className="rounded-xl p-8 text-center text-xs" style={{ color: 'var(--zx-text-3)', border: '1px solid var(--zx-border)' }}>
+              No hay casos analizados.
+            </div>
+          ) : cases.map(ac => {
             const vm = verdictMap[ac.verdict];
             return (
               <div key={ac.id} className="rounded-xl p-4" style={{ background:'var(--zx-surface)', border:'1px solid var(--zx-border)' }}>

@@ -56,6 +56,7 @@ async function patchCase(id: string, patch: Partial<Pick<PQRCase, 'status' | 'ai
 
 export default function PQRPage() {
   const [cases, setCases]               = useState<PQRCase[]>([]);
+  const [isLoading, setIsLoading]       = useState(true);
   const [editingId, setEditingId]       = useState<string | null>(null);
   const [editText, setEditText]         = useState('');
   const [appliedIds, setAppliedIds]     = useState<Set<string>>(new Set());
@@ -69,7 +70,10 @@ export default function PQRPage() {
   });
 
   const refresh = useCallback(() => {
-    fetchCases().then(setCases).catch(() => {});
+    fetchCases()
+      .then(setCases)
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -200,7 +204,15 @@ export default function PQRPage() {
 
         {/* Cases */}
         <div className="space-y-3">
-          {cases.map(p => {
+          {isLoading ? (
+            <div className="rounded-xl p-8 text-center text-xs" style={{ color: 'var(--zx-text-3)', border: '1px dashed var(--zx-border)' }}>
+              Cargando historial de PQRs...
+            </div>
+          ) : cases.length === 0 ? (
+            <div className="rounded-xl p-8 text-center text-xs" style={{ color: 'var(--zx-text-3)', border: '1px solid var(--zx-border)' }}>
+              No hay PQRs registradas.
+            </div>
+          ) : cases.map(p => {
             const tm = typeMap[p.type] ?? typeMap['queja'];
             const sm = statusMap[p.status] ?? statusMap['open'];
             const pm = priorityMap[p.priority] ?? priorityMap['medium'];

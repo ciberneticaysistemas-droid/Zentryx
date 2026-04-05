@@ -159,3 +159,110 @@ export interface ActiveContext {
   user:       string;
   role:       string;
 }
+
+// ── Vacations ─────────────────────────────────────────────────────────────────
+export type VacationStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+export type VacationType   = 'vacaciones' | 'permiso_remunerado' | 'permiso_no_remunerado' | 'licencia_luto' | 'otro';
+
+export interface VacationRequest {
+  id:           string;
+  employeeId:   string;
+  employeeName: string;
+  department:   string;
+  type:         VacationType;
+  startDate:    string;
+  endDate:      string;
+  days:         number;
+  reason:       string;
+  status:       VacationStatus;
+  createdAt:    string;
+  approvedBy?:  string;
+  approvedAt?:  string;
+  rejectedReason?: string;
+}
+
+// ── Training ──────────────────────────────────────────────────────────────────
+export type TrainingStatus = 'pending' | 'in_progress' | 'completed' | 'expired';
+
+export interface TrainingCourse {
+  id:           string;
+  title:        string;
+  provider:     string;
+  category:     'sst' | 'tecnico' | 'liderazgo' | 'compliance' | 'otro';
+  durationHours:number;
+  mandatory:    boolean;
+  targetRoles?: string[];
+}
+
+export interface TrainingRecord {
+  id:           string;
+  employeeId:   string;
+  employeeName: string;
+  department:   string;
+  courseId:     string;
+  courseTitle:  string;
+  category:     TrainingCourse['category'];
+  status:       TrainingStatus;
+  startDate:    string;
+  completedAt?: string;
+  expiresAt?:   string;
+  score?:       number;
+  certificate?: string;
+  mandatory:    boolean;
+}
+
+// ── Audit Log ─────────────────────────────────────────────────────────────────
+export type AuditAction =
+  | 'create' | 'update' | 'delete' | 'login' | 'logout'
+  | 'approve' | 'reject' | 'export' | 'view';
+
+export interface AuditLog {
+  id:        string;
+  userId:    string;
+  userName:  string;
+  action:    AuditAction;
+  entity:    string;
+  entityId:  string;
+  detail:    string;
+  timestamp: string;
+}
+
+// ── Payroll Extended ──────────────────────────────────────────────────────────
+export interface PayrollExtended extends PayrollRecord {
+  // Devengos adicionales
+  transportAid:     number;   // auxilio de transporte
+  overtimeHours:    number;   // horas extras diurnas
+  overtimePay:      number;   // valor horas extras
+  sundayPay:        number;   // dominicales/festivos
+  bonus:            number;   // bonificaciones/comisiones
+  // Deducciones adicionales
+  sourceRetention:  number;   // retención en la fuente
+  embargos:         number;   // embargos judiciales
+  libranzas:        number;   // créditos libranza
+  absenceDeduction: number;   // descuento ausencias rechazadas
+  // Provisiones del empleador (no es deducción del empleado)
+  employerEps:      number;   // EPS empleador 8.5%
+  employerPension:  number;   // Pensión empleador 12%
+  icbf:             number;   // ICBF 3%
+  sena:             number;   // SENA 2%
+  // Prestaciones sociales provisión
+  cesantias:        number;   // 8.33%
+  cesantiaInterest: number;   // 1% sobre cesantías
+  prima:            number;   // 8.33%
+  vacacionesProv:   number;   // 4.17%
+  // Totales
+  grossPay:         number;   // total devengado
+  totalDeductions:  number;   // total deducciones empleado
+  netPayAdjusted:   number;   // neto real después de todo
+  totalEmployerCost:number;   // costo total para la empresa
+}
+
+// ── Contract extended with signature ─────────────────────────────────────────
+export type SignatureStatus = 'unsigned' | 'sent' | 'signed' | 'rejected';
+
+export interface ContractSignature {
+  status:     SignatureStatus;
+  sentAt?:    string;
+  signedAt?:  string;
+  signerEmail?:string;
+}

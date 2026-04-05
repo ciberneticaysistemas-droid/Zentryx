@@ -1,5 +1,22 @@
 import { absenceCases as mockAbsences, pqrCases as mockPqr } from './data';
-import type { AbsenceCase, PQRCase, AbsenceVerdict, PQRType, PQRPriority } from '@/types';
+import type {
+  AbsenceCase, PQRCase, AbsenceVerdict, PQRType, PQRPriority,
+  VacationRequest, VacationStatus, VacationType,
+  TrainingRecord, TrainingCourse, TrainingStatus,
+  AuditLog, AuditAction,
+} from '@/types';
+
+// ── Notification types ────────────────────────────────────────────────────────
+export type NotifType = 'info' | 'success' | 'warning' | 'danger';
+
+export interface Notification {
+  id:        string;
+  type:      NotifType;
+  title:     string;
+  body:      string;
+  createdAt: string;
+  read:      boolean;
+}
 
 /**
  * n8n sometimes returns fields as enriched objects: { value, html, text }.
@@ -33,13 +50,25 @@ function toNum(v: unknown, fallback: number): number {
 // globalThis trick: keeps store alive across Next.js HMR reloads in dev
 declare global {
   // eslint-disable-next-line no-var
-  var __zx_absences: AbsenceCase[] | undefined;
+  var __zx_absences:  AbsenceCase[]     | undefined;
   // eslint-disable-next-line no-var
-  var __zx_pqr: PQRCase[] | undefined;
+  var __zx_pqr:       PQRCase[]         | undefined;
+  // eslint-disable-next-line no-var
+  var __zx_notifs:    Notification[]    | undefined;
+  // eslint-disable-next-line no-var
+  var __zx_vacations: VacationRequest[] | undefined;
+  // eslint-disable-next-line no-var
+  var __zx_training:  TrainingRecord[]  | undefined;
+  // eslint-disable-next-line no-var
+  var __zx_audit:     AuditLog[]        | undefined;
 }
 
-const absences: AbsenceCase[] = (globalThis.__zx_absences ??= [...mockAbsences]);
-const pqrs: PQRCase[]         = (globalThis.__zx_pqr     ??= [...mockPqr]);
+const absences:  AbsenceCase[]     = (globalThis.__zx_absences  ??= [...mockAbsences]);
+const pqrs:      PQRCase[]         = (globalThis.__zx_pqr       ??= [...mockPqr]);
+const notifs:    Notification[]    = (globalThis.__zx_notifs    ??= []);
+const vacations: VacationRequest[] = (globalThis.__zx_vacations ??= []);
+const trainings: TrainingRecord[]  = (globalThis.__zx_training  ??= []);
+const auditLogs: AuditLog[]        = (globalThis.__zx_audit     ??= []);
 
 // ── Absence store ─────────────────────────────────────────────────────────────
 
@@ -124,5 +153,113 @@ export const pqrStore = {
   update(id: string, patch: Partial<Pick<PQRCase, 'status' | 'aiSuggestion' | 'priority'>>): void {
     const idx = pqrs.findIndex(p => p.id === id);
     if (idx !== -1) Object.assign(pqrs[idx], patch);
+  },
+};
+
+// ── Notification store ────────────────────────────────────────────────────────
+
+export const notificationStore = {
+  getAll(): Notification[] {
+    return [...notifs];
+  },
+
+  add(data: Omit<Notification, 'id' | 'createdAt' | 'read'>): Notification {
+    const item: Notification = {
+      id:        `N${Date.now()}`,
+      type:      data.type,
+      title:     toStr(data.title, 'Notificación'),
+      body:      toStr(data.body,  ''),
+      createdAt: new Date().toISOString(),
+      read:      false,
+    };
+    notifs.unshift(item);
+    // Keep only last 50 notifications
+    if (notifs.length > 50) notifs.splice(50);
+    return item;
+  },
+
+  markRead(id: string): void {
+    const n = notifs.find(n => n.id === id);
+    if (n) n.read = true;
+  },
+
+  markAllRead(): void {
+    notifs.forEach(n => { n.read = true; });
+  },
+
+  unreadCount(): number {
+    return notifs.filter(n => !n.read).length;
+  },
+};
+
+// ── Vacation store ────────────────────────────────────────────────────────────
+
+export const vacationStore = {
+  getAll(): VacationRequest[] { return [...vacations]; },
+
+  getByEmployee(employeeId: string): VacationRequest[] {
+    return vacations.filter(v => v.employeeId === employeeId);
+  },
+
+  add(data: Omit<VacationRequest, 'id' | 'createdAt' | 'status'>): VacationRequest {
+    const item: VacationRequest = {
+      ...data,
+      id:        `VAC${Date.now()}`,
+      status:    'pending',
+      createdAt: new Date().toISOString(),
+    };
+    vacations.unshift(item);
+    return item;
+  },
+
+  update(id: string, patch: Partial<Pick<VacationRequest, 'status' | 'approvedBy' | 'approvedAt' | 'rejectedReason'>>): void {
+    const idx = vacations.findIndex(v => v.id === id);
+    if (idx !== -1) Object.assign(vacations[idx], patch);
+  },
+};
+
+// ── Training store ────────────────────────────────────────────────────────────
+
+export const trainingStore = {
+  getAll(): TrainingRecord[] { return [...trainings]; },
+
+  getByEmployee(employeeId: string): TrainingRecord[] {
+    return trainings.filter(t => t.employeeId === employeeId);
+  },
+
+  add(data: Omit<TrainingRecord, 'id'>): TrainingRecord {
+    const item: TrainingRecord = { ...data, id: `TRN${Date.now()}` };
+    trainings.unshift(item);
+    return item;
+  },
+
+  update(id: string, patch: Partial<Pick<TrainingRecord, 'status' | 'completedAt' | 'score' | 'certificate' | 'expiresAt'>>): void {
+    const idx = trainings.findIndex(t => t.id === id);
+    if (idx !== -1) Object.assign(trainings[idx], patch);
+  },
+
+  expiringSoon(): TrainingRecord[] {
+    const threshold = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
+    return trainings.filter(t => {
+      if (!t.expiresAt) return false;
+      const exp = new Date(t.expiresAt).getTime();
+      return exp > Date.now() && exp <= threshold;
+    });
+  },
+};
+
+// ── Audit store ───────────────────────────────────────────────────────────────
+
+export const auditStore = {
+  getAll(): AuditLog[] { return [...auditLogs]; },
+
+  log(data: Omit<AuditLog, 'id' | 'timestamp'>): void {
+    const entry: AuditLog = {
+      ...data,
+      id:        `AUD${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: new Date().toISOString(),
+    };
+    auditLogs.unshift(entry);
+    if (auditLogs.length > 500) auditLogs.splice(500);
   },
 };

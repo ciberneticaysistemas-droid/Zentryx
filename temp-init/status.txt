@@ -1,0 +1,22 @@
+﻿ M src/app/(app)/contracts/page.tsx
+ M src/app/(app)/employees/page.tsx
+ M src/app/(app)/payroll/page.tsx
+ M src/app/(app)/performance/page.tsx
+ M src/components/layout/Header.tsx
+ M src/components/layout/Sidebar.tsx
+ M src/lib/store.ts
+ M src/types/index.ts
+?? ../.claude/
+?? ../analisis_sistema_v2.md
+?? analisis_sistema.md
+?? src/app/(app)/audit/
+?? src/app/(app)/employee-portal/
+?? src/app/(app)/reports/
+?? src/app/(app)/training/
+?? src/app/(app)/vacations/
+?? src/app/api/audit/
+?? src/app/api/cases/vacations/
+?? src/app/api/employees/
+?? src/app/api/notifications/
+?? src/app/api/training/
+?? status.txt

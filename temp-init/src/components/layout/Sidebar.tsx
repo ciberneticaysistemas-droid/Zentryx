@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, FileText, Brain, ClipboardList,
   MessageSquare, HelpCircle, DollarSign, Clock, TrendingUp,
-  Zap, ChevronRight,
+  Zap, ChevronRight, UserCircle, Activity, Calendar, Briefcase, Shield
 } from 'lucide-react';
 
 interface NavItem { label: string; href: string; icon: React.ReactNode; badge?: number; }
@@ -15,14 +15,17 @@ const navGroups: NavGroup[] = [
   {
     label: 'Principal',
     items: [
-      { label: 'Dashboard',   href: '/dashboard',   icon: <LayoutDashboard size={16} /> },
-      { label: 'Empleados',   href: '/employees',   icon: <Users size={16} /> },
+      { label: 'Dashboard',        href: '/dashboard',        icon: <LayoutDashboard size={16} /> },
+      { label: 'Reportes',         href: '/reports',          icon: <Activity size={16} /> },
+      { label: 'Empleados',        href: '/employees',        icon: <Users size={16} /> },
+      { label: 'Portal Empleado',  href: '/employee-portal',  icon: <UserCircle size={16} /> },
     ],
   },
   {
     label: 'Operaciones',
     items: [
       { label: 'Nómina',      href: '/payroll',     icon: <DollarSign size={16} /> },
+      { label: 'Vacaciones',  href: '/vacations',   icon: <Calendar size={16} /> },
       { label: 'Horarios',    href: '/schedule',    icon: <Clock size={16} /> },
       { label: 'Desempeño',   href: '/performance', icon: <TrendingUp size={16} /> },
     ],
@@ -32,14 +35,16 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Reclutamiento IA', href: '/recruitment', icon: <Brain size={16} /> },
       { label: 'Ausencias IA',     href: '/absences',    icon: <ClipboardList size={16} />, badge: 2 },
+      { label: 'Capacitaciones',   href: '/training',    icon: <Briefcase size={16} /> },
     ],
   },
   {
-    label: 'Legal',
+    label: 'Legal & Auditoría',
     items: [
       { label: 'Contratos',       href: '/contracts',      icon: <FileText size={16} /> },
       { label: 'Comunicaciones',  href: '/communications', icon: <MessageSquare size={16} /> },
       { label: 'PQR',             href: '/pqr',            icon: <HelpCircle size={16} />, badge: 3 },
+      { label: 'Auditoría',       href: '/audit',          icon: <Shield size={16} /> },
     ],
   },
 ];
