@@ -1,0 +1,328 @@
+{
+  "name": "Zentryx - Monitor Cartas de Renuncia",
+  "nodes": [
+    {
+      "id": "a5708b7d-5a85-41c7-87ce-cc1739d943ca",
+      "name": "Monitor Cartas de Renuncia",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 15,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "subject:renuncia OR subject:resignation OR subject:dimision",
+          "readStatus": "unread"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pUXkdlhWM5Tq0Haz",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "id": "455b3029-3144-4e17-897d-df675a29e315",
+      "name": "Analizar Carta de Renuncia",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        540,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza la siguiente carta de renuncia recibida por email. Extrae la informacion estructurada.\n\nRemitente del correo: {{ $json.from }}\nAsunto: {{ $json.subject }}\nFecha del correo: {{ $json.date }}\nContenido completo:\n{{ $json.text }}\n\nInstrucciones:\n- employeeName: nombre completo del empleado (extrae del contenido, si no esta usa el nombre del remitente)\n- lastWorkingDay: ultimo dia de trabajo en formato YYYY-MM-DD, si no se menciona escribe null\n- reason: motivo principal de la renuncia en una frase corta\n- tone: uno de estos valores exactos: profesional, emocional, conflictivo\n- summary: resumen ejecutivo de 2-3 oraciones para el administrador de RRHH\n- recommendedActions: acciones concretas recomendadas para RRHH\n- confidence: nivel de confianza del analisis del 0 al 100",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres un especialista de RRHH. Analiza cartas de renuncia y extrae datos estructurados. Responde SOLO con el JSON solicitado."
+        }
+      }
+    },
+    {
+      "id": "befb950e-4803-4fb2-8dca-f6f6821c27b0",
+      "name": "OpenAI gpt-4o-mini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        540,
+        520
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "2iteoDixxVFen9QF",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "id": "1e763ffa-c82a-4bac-894f-41184fd9e58b",
+      "name": "Estructura Renuncia",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        520
+      ],
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{ \"employeeName\": \"Juan Perez\", \"lastWorkingDay\": \"2026-05-03\", \"reason\": \"Motivo principal de la renuncia\", \"tone\": \"profesional\", \"summary\": \"Resumen ejecutivo de 2-3 oraciones para RRHH\", \"recommendedActions\": \"Acciones recomendadas para el equipo de RRHH\", \"confidence\": 85 }"
+      }
+    },
+    {
+      "id": "782b7653-6179-4088-b25a-be56a9a6b322",
+      "name": "Registrar en Zentryx",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        840,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://pub-vintage-namespace-frontpage.trycloudflare.com/api/cases/absences",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "employeeName",
+              "value": "={{ $(\"Analizar Carta de Renuncia\").item.json.employeeName }}"
+            },
+            {
+              "name": "type",
+              "value": "Carta de Renuncia"
+            },
+            {
+              "name": "verdict",
+              "value": "review"
+            },
+            {
+              "name": "confidence",
+              "value": "={{ $(\"Analizar Carta de Renuncia\").item.json.confidence }}"
+            },
+            {
+              "name": "summary",
+              "value": "={{ $(\"Analizar Carta de Renuncia\").item.json.summary }} | Motivo: {{ $(\"Analizar Carta de Renuncia\").item.json.reason }} | Tono: {{ $(\"Analizar Carta de Renuncia\").item.json.tone }} | Acciones: {{ $(\"Analizar Carta de Renuncia\").item.json.recommendedActions }}"
+            },
+            {
+              "name": "fileName",
+              "value": "={{ $(\"Monitor Cartas de Renuncia\").item.json.subject }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $(\"Analizar Carta de Renuncia\").item.json.lastWorkingDay ?? $now.toFormat(\"yyyy-MM-dd\") }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "db736e79-5442-4b42-aa8a-48bab61c91e8",
+      "name": "Notificar Admin RRHH",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1140,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "v.rios@zentryx.co",
+        "subject": "=Renuncia recibida — {{ $(\"Analizar Carta de Renuncia\").item.json.employeeName }} ({{ $(\"Analizar Carta de Renuncia\").item.json.tone }})",
+        "emailType": "html",
+        "message": "=<h2>Nueva Carta de Renuncia Detectada</h2><table style=\"border-collapse:collapse;width:100%;font-family:sans-serif\"><tr><td style=\"padding:8px;border:1px solid #ddd;background:#f5f5f5\"><strong>Empleado</strong></td><td style=\"padding:8px;border:1px solid #ddd\">{{ $(\"Analizar Carta de Renuncia\").item.json.employeeName }}</td></tr><tr><td style=\"padding:8px;border:1px solid #ddd;background:#f5f5f5\"><strong>Remitente</strong></td><td style=\"padding:8px;border:1px solid #ddd\">{{ $(\"Monitor Cartas de Renuncia\").item.json.from }}</td></tr><tr><td style=\"padding:8px;border:1px solid #ddd;background:#f5f5f5\"><strong>Ultimo dia</strong></td><td style=\"padding:8px;border:1px solid #ddd\">{{ $(\"Analizar Carta de Renuncia\").item.json.lastWorkingDay ?? \"No especificado\" }}</td></tr><tr><td style=\"padding:8px;border:1px solid #ddd;background:#f5f5f5\"><strong>Motivo</strong></td><td style=\"padding:8px;border:1px solid #ddd\">{{ $(\"Analizar Carta de Renuncia\").item.json.reason }}</td></tr><tr><td style=\"padding:8px;border:1px solid #ddd;background:#f5f5f5\"><strong>Tono</strong></td><td style=\"padding:8px;border:1px solid #ddd\">{{ $(\"Analizar Carta de Renuncia\").item.json.tone }}</td></tr></table><h3>Resumen</h3><p>{{ $(\"Analizar Carta de Renuncia\").item.json.summary }}</p><h3>Acciones Recomendadas</h3><p>{{ $(\"Analizar Carta de Renuncia\").item.json.recommendedActions }}</p><hr/><p><em>Caso registrado automaticamente en Zentryx HCM</em></p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "webhookId": "e282f69b-d846-4cfc-a50a-fa09e5b5525e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pUXkdlhWM5Tq0Haz",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Monitor Cartas de Renuncia": {
+      "main": [
+        [
+          {
+            "node": "Analizar Carta de Renuncia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Carta de Renuncia": {
+      "main": [
+        [
+          {
+            "node": "Registrar en Zentryx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI gpt-4o-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analizar Carta de Renuncia",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estructura Renuncia": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analizar Carta de Renuncia",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar en Zentryx": {
+      "main": [
+        [
+          {
+            "node": "Notificar Admin RRHH",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Monitor Cartas de Renuncia": {
+      "Monitor Cartas de Renuncia": {
+        "lastTimeChecked": 1775269221
+      }
+    }
+  },
+  "pinData": {
+    "Monitor Cartas de Renuncia": [
+      {
+        "json": {
+          "id": "19d5672c66f0e67f",
+          "threadId": "19d5672c66f0e67f",
+          "labelIds": [
+            "UNREAD",
+            "IMPORTANT",
+            "CATEGORY_PERSONAL",
+            "INBOX"
+          ],
+          "sizeEstimate": 7465,
+          "headers": {
+            "delivered-to": "Delivered-To: ciberneticaysistemas@gmail.com",
+            "received": "Received: from mail-sor-f65.google.com (mail-sor-f65.google.com. [209.85.220.65])\r\n        by mx.google.com with SMTPS id 2adb3069b0e04-5a2c6cc7c22sor1331690e87.13.2026.04.03.20.04.15\r\n        for <ciberneticaysistemas@gmail.com>\r\n        (Google Transport Security);\r\n        Fri, 03 Apr 2026 20:04:16 -0700 (PDT)",
+            "x-received": "X-Received: by 2002:a2e:bf0e:0:b0:38c:c068:1689 with SMTP id\r\n 38308e7fff4ca-38d91d471efmr12534651fa.29.1775271855035; Fri, 03 Apr 2026\r\n 20:04:15 -0700 (PDT)",
+            "arc-seal": "ARC-Seal: i=1; a=rsa-sha256; t=1775271855; cv=none;\r\n        d=google.com; s=arc-20240605;\r\n        b=Jy6lZzPECSS7eVLvWiSRrqWL0Rqw8P/Jy/ic4zBF0EpgrT7Vc+PHK7IvLC2CO7s1hk\r\n         NmK3p+OeXhs6t8XsC6wbPfkR0SXkW/kSgRTNUDw5sVeykS749baavb/NUibUV3eyTHNu\r\n         p3W9GWjg9npTKlDGC/+ynhxdexlB6rvl31QY4+pm3vD4ROdm1KLMfw8KWE9YNPBPIuGN\r\n         SEwC+YhBiRizzWvuzc5FMsK9liBrI0uvlPLJYXpU1pw4/op9CKlETeT0//OgVJNQXNpS\r\n         L7VOT9uR+6J8K3M7swFeJYAKolyWXp3DJuiFZmY3mCp7N7/9Fwmxz7Mej8y5jy52xmdl\r\n         t73Q==",
+            "arc-message-signature": "ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;\r\n        h=to:subject:message-id:date:from:mime-version:dkim-signature;\r\n        bh=Fy2icCcLyTVfDg2gZQfXHHUJpRQ2P73zW/WIxfZbhos=;\r\n        fh=sObTAZaNXe6qZPmQooiV5g3yuNm5qTLH6hqIcVbk4dE=;\r\n        b=L0fmtWdFa4dwEhGJiSR+kMaF+0IBxbjtzXKph484Tzmt6G/oTCOXW2Pwz44duTsdbd\r\n         mzfQXslHmld5vcLGVJoSl2flN7ra/qgqHXVUEnOdS24eyidOELbn2ECFIIK2fxIH2WWY\r\n         FM9d5qtpJr0oVwKYAchhOYrdU1Buq8NZv5chK45N6oCNFb9xbPmeUgD/1qi2Ikzoz6U4\r\n         nP9lf0jEDd8yaEE8vweqsNr7NRwep7/WM6pAohg9ILIusZ1EGfX81OLurjNCiNuJ8l9W\r\n         zwBMb92DBYEEAGrEmfKmHf8lsngEwG8+6Jcm79MzzZRPmbfPufx8x4O8yMFOpoJp/o7f\r\n         7X8Q==;\r\n        dara=google.com",
+            "arc-authentication-results": "ARC-Authentication-Results: i=1; mx.google.com; arc=none",
+            "return-path": "Return-Path: <melomunozalejandro@gmail.com>",
+            "received-spf": "Received-SPF: pass (google.com: domain of melomunozalejandro@gmail.com designates 209.85.220.65 as permitted sender) client-ip=209.85.220.65;",
+            "authentication-results": "Authentication-Results: mx.google.com;\r\n       dkim=pass header.i=@gmail.com header.s=20251104 header.b=nf1782rJ;\r\n       arc=pass (i=1);\r\n       spf=pass (google.com: domain of melomunozalejandro@gmail.com designates 209.85.220.65 as permitted sender) smtp.mailfrom=melomunozalejandro@gmail.com;\r\n       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;\r\n       dara=pass header.i=@gmail.com",
+            "dkim-signature": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=gmail.com; s=20251104; t=1775271855; x=1775876655; dara=google.com;\r\n        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject\r\n         :date:message-id:reply-to;\r\n        bh=Fy2icCcLyTVfDg2gZQfXHHUJpRQ2P73zW/WIxfZbhos=;\r\n        b=nf1782rJrCtQYeh6YoIbCjYi9C9zSDU3gCSGR1mJnfKNcJ+UXBdOmrWKE4RAx481WZ\r\n         ooEVCWD9ra9tCE6dyz6xROKG563Nrci+wOqo2GOqffLZt547Or786BBvcJDaKcU1ZnkR\r\n         33BuDhLZvXlsU1LZkB8HHS+xnwoaPOwFtUIMOOeDer0f6r1twz/IteJn4M0z69KbXp7j\r\n         Pj7RDUm8x83Ej+rnLQT9cCpv/0xApOl4lsGfTiei4JiO4+Sveg61MZO+yFcF1OVHFFSt\r\n         /bg6CPGclNSuy0Ivt76nlzqk63EpmTtfIouW2XuV8VME5l/73EY70eAmrcNmg7l58+8V\r\n         olIQ==",
+            "x-google-dkim-signature": "X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=1e100.net; s=20251104; t=1775271855; x=1775876655;\r\n        h=to:subject:message-id:date:from:mime-version:x-gm-gg\r\n         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;\r\n        bh=Fy2icCcLyTVfDg2gZQfXHHUJpRQ2P73zW/WIxfZbhos=;\r\n        b=hq44/GgJTqBtQ6gN4f7En1z38TcodfOp6IXkT1QwVIzvN/vLvA1+bp8m7R5nPeYB/Z\r\n         88tG5dsulg82tJxSGIR833VR3fBeuzGJORaMTiUN1XU+OZ0YILAoPVH32rsIQVjTqU39\r\n         1CPVHVC9emIRPFYJy2zYL84bo21cpsDLB5nOUIDS9hdT5EN2OmgJlfFU+2G/jweCcLzr\r\n         LjyJRJxrb4QWko0ke8FA2R4+L3Hk9ppsPI6lyOjJeOsO2r1N8FwGeU+uY+400LGnl7z7\r\n         JPdyaSWuE6Yk0Ma8aE6hc3rKBd6EwULP/X+BgSTbHQtIqm8rht3VZkzGudlXqE+h5+af\r\n         nFVg==",
+            "x-gm-message-state": "X-Gm-Message-State: AOJu0YxlrT7bLAzGXXgDpbQ9uuPCCctWYPkYX2vaqVfGLOWtTovU9upe\r\n\t5fuGCtWFae4hW8vKrYVULblDtSprrxUeho1S7QsjW0ssa2VKeX5fHCL8hrLbDlxP/Y75S+r3o0y\r\n\t9SwKXtW8BSRVe7PqKXlJhKaP0DXSLQ0VBndKN",
+            "x-gm-gg": "X-Gm-Gg: AeBDieuaxGrzF6AoMvu5Pe0OdXUmu9oMLTaJCfei5i75OxE3rF/Zw8ZJZDG0dIk6MaM\r\n\tFhUFALpuhQV7ge+Cbac31f1tS/fOZKXRNTciepSZA2yq5EWCSPQDQyagOle+/VGGkz0Le0ejmLz\r\n\tLXCqtvbtiybz7WOMMce9IpAJ+D8PVk0FPzrYoovscfHmfEuj0FVOdUPywA0I1rtQKT0znhJF7oN\r\n\tAJxXC8Xe5UEqjdclzaD5z2p8xlDBHs36PRJkQ0Lyys4+vu6zJAMxyEzTeSv+1Mq/oRpFbPZI7Ox\r\n\ttyLfLUDmHW66YSxzCFWJTYUxEe+DHghpIySleIxcdV9+xMwqu5AW",
+            "mime-version": "MIME-Version: 1.0",
+            "from": "From: =?UTF-8?Q?Alejandro_Melo_Mu=C3=B1oz?= <melomunozalejandro@gmail.com>",
+            "date": "Date: Fri, 3 Apr 2026 22:04:02 -0500",
+            "x-gm-features": "X-Gm-Features: AQROBzBlg1-I8qYRl8_Dzpe1Hn5Ry_uayj7OWCdCd52ki61yMb67QvRfcUFR7UY",
+            "message-id": "Message-ID: <CAP8gQLm5yJj3QxMb0tg7vr=23Xs7kLwAaBg7v=AJdeBiHEgR7g@mail.gmail.com>",
+            "subject": "Subject: Carta de renuncia",
+            "to": "To: \"ciberneticaysistemas@gmail.com\" <ciberneticaysistemas@gmail.com>",
+            "content-type": "Content-Type: multipart/alternative; boundary=\"0000000000004c9bb1064e99b0c2\""
+          },
+          "html": "<div dir=\"auto\">Yo Alejandro Melo renunció a la empresa por problemas con la dirección técnica y falta de visión que ustedes tienen hacia el futuro, hasta nunca</div>\n",
+          "text": "Yo Alejandro Melo renunció a la empresa por problemas con la dirección\ntécnica y falta de visión que ustedes tienen hacia el futuro, hasta nunca\n",
+          "textAsHtml": "<p>Yo Alejandro Melo renunci&oacute; a la empresa por problemas con la direcci&oacute;n<br/>t&eacute;cnica y falta de visi&oacute;n que ustedes tienen hacia el futuro, hasta nunca</p>",
+          "subject": "Carta de renuncia",
+          "date": "2026-04-04T03:04:02.000Z",
+          "to": {
+            "value": [
+              {
+                "address": "ciberneticaysistemas@gmail.com",
+                "name": ""
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><a href=\"mailto:ciberneticaysistemas@gmail.com\" class=\"mp_address_email\">ciberneticaysistemas@gmail.com</a></span>",
+            "text": "ciberneticaysistemas@gmail.com"
+          },
+          "from": {
+            "value": [
+              {
+                "address": "melomunozalejandro@gmail.com",
+                "name": "Alejandro Melo Muñoz"
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><span class=\"mp_address_name\">Alejandro Melo Mu&#xF1;oz</span> &lt;<a href=\"mailto:melomunozalejandro@gmail.com\" class=\"mp_address_email\">melomunozalejandro@gmail.com</a>&gt;</span>",
+            "text": "\"Alejandro Melo Muñoz\" <melomunozalejandro@gmail.com>"
+          },
+          "messageId": "<CAP8gQLm5yJj3QxMb0tg7vr=23Xs7kLwAaBg7v=AJdeBiHEgR7g@mail.gmail.com>"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "triggerCount": 1,
+  "meta": {
+    "aiBuilderAssisted": true
+  }
+}

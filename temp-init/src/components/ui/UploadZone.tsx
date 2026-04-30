@@ -95,7 +95,7 @@ export default function UploadZone({
         ) : (
           <div className="flex items-center justify-center w-12 h-12 rounded-full"
             style={{ background: isDragging ? 'var(--zx-accent)' : 'var(--zx-surface-3)' }}>
-            <Upload size={20} style={{ color: isDragging ? '#09090B' : 'var(--zx-accent)' }} />
+            <Upload size={20} style={{ color: isDragging ? 'var(--zx-bg)' : 'var(--zx-accent)' }} />
           </div>
         )}
 

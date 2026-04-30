@@ -66,9 +66,16 @@ export default function DashboardPage() {
       <div className="flex-1 p-6 space-y-6 animate-fade-in-up">
 
         {/* ── KPI Grid ─────────────────────────────────────────────── */}
+        {/* Top-border colors follow card semantics (P3 palette duality) */}
+        {/* Order: Ausentismo | Contratos | PQRS | Desempeño | Plantilla | Nómina pendiente */}
         <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
           {dashboardInsights.map((m, i) => (
-            <StatCard key={m.label} metric={m} icon={insightIcons[i]} />
+            <StatCard
+              key={m.label}
+              metric={m}
+              icon={insightIcons[i]}
+              borderTopColor={['var(--zx-danger)', 'var(--zx-warning)', 'var(--zx-danger)', 'var(--zx-success)', 'var(--zx-accent-bright)', 'var(--zx-warning)'][i]}
+            />
           ))}
         </div>
 
@@ -102,7 +109,7 @@ export default function DashboardPage() {
                 <div className="h-full rounded-full"
                   style={{
                     width: `${(payrollRecords.filter(r=>r.status==='paid').length/payrollRecords.length)*100}%`,
-                    background:'linear-gradient(90deg,var(--zx-accent),var(--zx-accent-hover))',
+                    background: 'var(--zx-secondary)',
                   }} />
               </div>
             </div>

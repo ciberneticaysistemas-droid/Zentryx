@@ -1,0 +1,258 @@
+{
+  "name": "Zentryx - Monitor PQR por Email",
+  "nodes": [
+    {
+      "id": "c10b057a-de4e-44fc-b212-c703dcab411f",
+      "name": "Monitor PQR por Email",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        304
+      ],
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "subject:PQR OR subject:queja OR subject:reclamo OR subject:solicitud",
+          "readStatus": "unread"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pUXkdlhWM5Tq0Haz",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "id": "12a02557-a670-4315-884c-41e134b35364",
+      "name": "Clasificar PQR",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        544,
+        304
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza este correo electronico y clasificalo como una PQR (Pregunta, Queja o Reclamo).\n\nRemitente: {{ $json.from }}\nAsunto: {{ $json.subject }}\nContenido:\n{{ $json.text }}\n\nExtrae y devuelve la informacion estructurada solicitada.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres un asistente de atencion al cliente. Clasifica como: pregunta, queja o reclamo. Prioridad: low, medium o high. Responde en espanol."
+        }
+      }
+    },
+    {
+      "id": "c898f123-573e-4284-a941-d297000d90de",
+      "name": "OpenAI gpt-4o-mini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        512
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "2iteoDixxVFen9QF",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "id": "dc31aaac-b2ca-40e0-b68b-187971d6c17f",
+      "name": "Estructura PQR",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        512
+      ],
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{ \"type\": \"queja\", \"subject\": \"Resumen breve del asunto\", \"submittedBy\": \"Nombre del remitente\", \"priority\": \"medium\", \"summary\": \"Descripcion del caso\", \"suggestedAction\": \"Accion recomendada para RRHH\" }"
+      }
+    },
+    {
+      "id": "24c5db67-549d-4455-bb50-4343c277ca24",
+      "name": "Registrar PQR en Zentryx",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        848,
+        304
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://pub-vintage-namespace-frontpage.trycloudflare.com/api/cases/pqr",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "={{ $json.type }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $json.subject }}"
+            },
+            {
+              "name": "submittedBy",
+              "value": "={{ $json.submittedBy }}"
+            },
+            {
+              "name": "priority",
+              "value": "={{ $json.priority }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $json.summary }}"
+            },
+            {
+              "name": "department",
+              "value": "RRHH"
+            },
+            {
+              "name": "aiSuggestion",
+              "value": "={{ $json.suggestedAction }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "71d8d363-a9d5-4c21-9326-dc4fa399c9d5",
+      "name": "Notificar Admin de PQR",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        304
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "v.rios@zentryx.co",
+        "subject": "=Nueva PQR - {{ $(\"Clasificar PQR\").item.json.type }}: {{ $(\"Clasificar PQR\").item.json.subject }}",
+        "emailType": "html",
+        "message": "=<h2>Nueva PQR por Email</h2><p><strong>Tipo:</strong> {{ $(\"Clasificar PQR\").item.json.type }}</p><p><strong>Remitente:</strong> {{ $(\"Clasificar PQR\").item.json.submittedBy }}</p><p><strong>Prioridad:</strong> {{ $(\"Clasificar PQR\").item.json.priority }}</p><h3>Resumen</h3><p>{{ $(\"Clasificar PQR\").item.json.summary }}</p><h3>Accion</h3><p>{{ $(\"Clasificar PQR\").item.json.suggestedAction }}</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "webhookId": "b893d087-61f6-4ce2-bf5a-b90c152e663b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pUXkdlhWM5Tq0Haz",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Monitor PQR por Email": {
+      "main": [
+        [
+          {
+            "node": "Clasificar PQR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar PQR": {
+      "main": [
+        [
+          {
+            "node": "Registrar PQR en Zentryx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI gpt-4o-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificar PQR",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estructura PQR": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Clasificar PQR",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar PQR en Zentryx": {
+      "main": [
+        [
+          {
+            "node": "Notificar Admin de PQR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Monitor PQR por Email": {
+      "Monitor PQR por Email": {
+        "lastTimeChecked": 1775269203
+      }
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "aiBuilderAssisted": true
+  }
+}

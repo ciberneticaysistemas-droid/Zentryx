@@ -17,7 +17,7 @@ const shiftMap: Record<ShiftType, { label:string; short:string; color:string; bg
   afternoon: { label:'Tarde',    short:'T', color:'var(--zx-warning)', bg:'var(--zx-warning-muted)' },
   night:     { label:'Noche',    short:'N', color:'var(--zx-accent)',  bg:'var(--zx-accent-muted)' },
   full:      { label:'Completo', short:'C', color:'var(--zx-success)', bg:'var(--zx-success-muted)' },
-  remote:    { label:'Remoto',   short:'R', color:'#9B6ED9',           bg:'#9B6ED925' },
+  remote:    { label:'Remoto',   short:'R', color:'var(--zx-accent)',  bg:'var(--zx-accent-muted)' },
   off:       { label:'Libre',    short:'—', color:'var(--zx-text-3)',  bg:'var(--zx-surface-3)' },
 };
 
@@ -187,7 +187,7 @@ export default function SchedulePage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label:'Turnos completos', value:Object.values(schedule).flat().filter(s=>s==='full').length,    color:'var(--zx-success)' },
-            { label:'Días remotos',     value:Object.values(schedule).flat().filter(s=>s==='remote').length,  color:'#9B6ED9' },
+            { label:'Días remotos',     value:Object.values(schedule).flat().filter(s=>s==='remote').length,  color:'var(--zx-accent)' },
             { label:'Días libres',      value:Object.values(schedule).flat().filter(s=>s==='off').length,     color:'var(--zx-text-3)' },
             { label:'Turnos nocturnos', value:Object.values(schedule).flat().filter(s=>s==='night').length,   color:'var(--zx-accent)' },
           ].map(s => (

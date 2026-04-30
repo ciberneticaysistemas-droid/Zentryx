@@ -25,7 +25,7 @@ function ScoreBar({ score }: { score: number }) {
   );
 }
 
-const rankColors  = ['var(--zx-accent)', 'var(--zx-text-2)', '#cd7f32'];
+const rankColors  = ['var(--zx-accent)', 'var(--zx-text-2)', 'var(--zx-bronze)'];
 const rankBg      = ['var(--zx-accent-muted)', 'var(--zx-surface-3)', 'var(--zx-surface-3)'];
 
 export default function RecruitmentPage() {

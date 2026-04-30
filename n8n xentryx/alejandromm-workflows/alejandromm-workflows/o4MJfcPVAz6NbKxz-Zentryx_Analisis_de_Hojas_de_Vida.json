@@ -1,0 +1,147 @@
+{
+  "name": "Zentryx - Analisis de Hojas de Vida",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zentryx/recruitment/analyze",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ce3cc68e-d891-4e64-b370-ca4abfc831a2",
+      "name": "Recibir Solicitud de Analisis",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "cc11bdad-d0b1-40c6-b4ff-da0e770cf853",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres experto en seleccion de personal en Colombia. Analiza los candidatos para el cargo \"{{ $json.body.jobTitle }}\".\n\nDescripcion del cargo: {{ $json.body.jobDescription }}\n\nCandidatos: {{ JSON.stringify($json.body.candidates) }}\n\nPara cada candidato asigna score 0-100, lista habilidades clave, indica anos de experiencia relevante, escribe resumen de 2-3 oraciones en espanol y asigna rank (1=mejor).",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres un experto evaluador de talento humano en el contexto empresarial colombiano. Tus evaluaciones son objetivas y en espanol."
+        }
+      },
+      "id": "4e2e5161-b7cc-450e-8496-444b62d6d279",
+      "name": "Analizar Candidatos con IA",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        544,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{ \"candidates\": [{ \"name\": \"Laura Quintero\", \"email\": \"l@email.com\", \"score\": 91, \"rank\": 1, \"skills\": [\"React\", \"TypeScript\", \"Node.js\"], \"experience\": 5, \"summary\": \"Perfil sobresaliente con solida experiencia.\" }] }"
+      },
+      "id": "52e0eed2-6455-4333-8332-26ff1f1b8ce6",
+      "name": "Parser Resultados CV",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"candidates\": $json.output.candidates } }}",
+        "options": {}
+      },
+      "id": "5e3f0589-949c-4f80-b11a-367f521d029c",
+      "name": "Enviar Resultados CV",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        848,
+        304
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        528,
+        528
+      ],
+      "id": "795c9cd1-b677-413b-8d36-172600dc7188",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "S1VuzrKc7XJED2Sh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Recibir Solicitud de Analisis": {
+      "main": [
+        [
+          {
+            "node": "Analizar Candidatos con IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Candidatos con IA": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resultados CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Resultados CV": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analizar Candidatos con IA",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analizar Candidatos con IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "templateCredsSetupCompleted": true
+  }
+}

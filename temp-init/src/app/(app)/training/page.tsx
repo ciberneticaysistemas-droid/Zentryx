@@ -129,7 +129,7 @@ export default function TrainingPage() {
 
         {mandatoryPend > 0 && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
-            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid var(--zx-danger)' }}>
+            style={{ background: 'var(--zx-danger-muted)', border: '1px solid var(--zx-danger)' }}>
             <AlertTriangle size={15} style={{ color: 'var(--zx-danger)', flexShrink: 0 }} />
             <p className="text-xs" style={{ color: 'var(--zx-danger)' }}>
               <span className="font-semibold">{mandatoryPend} capacitación{mandatoryPend > 1 ? 'es' : ''} obligatoria{mandatoryPend > 1 ? 's' : ''} pendiente{mandatoryPend > 1 ? 's' : ''}</span>
@@ -212,7 +212,7 @@ export default function TrainingPage() {
                         <p className="text-xs font-semibold" style={{ color: 'var(--zx-text-1)' }}>{rec.courseTitle}</p>
                         {rec.mandatory && (
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                            style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--zx-danger)' }}>
+                            style={{ background: 'var(--zx-danger-muted)', color: 'var(--zx-danger)' }}>
                             OBLIGATORIO
                           </span>
                         )}

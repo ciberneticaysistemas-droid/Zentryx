@@ -227,14 +227,19 @@ export default function PayrollPage() {
 
         {/* Employee cards */}
         <div className="space-y-2">
-          {allExt.map(r => {
+          {allExt.map((r, idx) => {
             const sm       = statusMap[r.status];
             const isOpen   = expandedId === r.id;
             const ex       = getExtras(r.id);
+            const rowBg    = idx % 2 === 0 ? 'var(--zx-surface-card)' : 'var(--zx-surface-elevated)';
 
             return (
-              <div key={r.id} className="rounded-xl overflow-hidden"
-                style={{ background: 'var(--zx-surface)', border: `1px solid ${isOpen ? 'var(--zx-accent)' : 'var(--zx-border)'}` }}>
+              <div key={r.id} className="overflow-hidden"
+                style={{
+                  background:  isOpen ? 'var(--zx-surface)' : rowBg,
+                  border:      `1px solid ${isOpen ? 'var(--zx-accent)' : 'var(--zx-border-subtle)'}`,
+                  borderBottom: `1px solid var(--zx-border-subtle)`,
+                }}>
 
                 {/* Summary row */}
                 <button className="w-full flex items-center gap-4 px-4 py-3 text-left"

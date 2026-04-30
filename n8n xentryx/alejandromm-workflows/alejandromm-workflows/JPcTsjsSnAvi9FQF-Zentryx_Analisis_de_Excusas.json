@@ -1,0 +1,153 @@
+{
+  "name": "Zentryx - Analisis de Excusas",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zentryx/absences/analyze",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "87556946-2355-4250-acd3-d3951ad98b45",
+      "name": "Recibir Excusa de Ausencia",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "6f0e7eca-728b-4330-8d28-5c0fed8dca68",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza la siguiente justificacion de ausencia laboral segun la normativa colombiana.\n\nEmpleado: {{ $json.body.employeeName }}\nTipo de ausencia: {{ $json.body.type }}\nPeriodo: {{ $json.body.startDate }} hasta {{ $json.body.endDate }}\nDescripcion del documento: {{ $json.body.documentDescription }}\n\nDetermina: verdict (accepted/rejected/review), confidence (0-100) y summary de 2-3 oraciones explicando el veredicto en espanol.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres un experto en legislacion laboral colombiana especializado en validacion de incapacidades y ausencias. Evaluas objetivamente la validez de los documentos segun el Codigo Sustantivo del Trabajo y normativas del Ministerio de Salud. Responde en espanol."
+        }
+      },
+      "id": "40262395-8242-4e49-9ec6-47bbf1d71133",
+      "name": "Analizar Justificacion de Ausencia",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        544,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{ \"verdict\": \"accepted\", \"confidence\": 96, \"summary\": \"Certificado medico valido emitido por entidad autorizada. Diagnostico y firma legibles.\" }"
+      },
+      "id": "62dfc626-96d5-4a78-b468-852cc647cfca",
+      "name": "Parser Veredicto Excusa",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"verdict\": $json.output.verdict, \"confidence\": $json.output.confidence, \"summary\": $json.output.summary } }}",
+        "options": {}
+      },
+      "id": "20141d43-df45-49fd-907b-5a56a574a974",
+      "name": "Enviar Veredicto Excusa",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        848,
+        304
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        528
+      ],
+      "id": "7ab1f06e-ee1b-4b79-9f8a-b83baf589170",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "2iteoDixxVFen9QF",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Recibir Excusa de Ausencia": {
+      "main": [
+        [
+          {
+            "node": "Analizar Justificacion de Ausencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Justificacion de Ausencia": {
+      "main": [
+        [
+          {
+            "node": "Enviar Veredicto Excusa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Veredicto Excusa": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analizar Justificacion de Ausencia",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analizar Justificacion de Ausencia",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "templateCredsSetupCompleted": true
+  }
+}

@@ -202,7 +202,7 @@ export default function VacationsPage() {
                           </button>
                           <button onClick={() => { setRejectId(req.id); setRejectReason(''); }}
                             className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium"
-                            style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--zx-danger)' }}>
+                            style={{ background: 'var(--zx-danger-muted)', color: 'var(--zx-danger)' }}>
                             <XCircle size={10} /> Rechazar
                           </button>
                         </div>

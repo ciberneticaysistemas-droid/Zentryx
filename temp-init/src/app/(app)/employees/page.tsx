@@ -234,7 +234,11 @@ export default function EmployeesPage() {
                   const sm = statusMap[emp.status];
                   return (
                     <tr key={emp.id} className="zx-row transition-colors"
-                      style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--zx-border)' : 'none', opacity: emp.status === 'inactive' ? 0.55 : 1 }}>
+                      style={{
+                        background:   i % 2 === 0 ? 'var(--zx-surface-card)' : 'var(--zx-surface-elevated)',
+                        borderBottom: i < filtered.length - 1 ? '1px solid var(--zx-border-subtle)' : 'none',
+                        opacity:      emp.status === 'inactive' ? 0.55 : 1,
+                      }}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
                           <Avatar initials={emp.initials} size="sm" />

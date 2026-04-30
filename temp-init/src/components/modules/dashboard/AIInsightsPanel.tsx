@@ -73,7 +73,7 @@ export default function AIInsightsPanel() {
               <XAxis dataKey="month" tick={{ fontSize:9, fill:'var(--zx-text-3)' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize:9, fill:'var(--zx-text-3)' }} axisLine={false} tickLine={false} domain={[75,90]} />
               <Tooltip content={<CustomTooltip unit=" pts" />} />
-              <Line type="monotone" dataKey="avg" stroke="var(--zx-accent)" strokeWidth={1.5} dot={false} />
+              <Line type="monotone" dataKey="avg" stroke="var(--zx-secondary)" strokeWidth={1.5} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>

@@ -1,30 +1,92 @@
 @import "tailwindcss";
 
-/* ── Zentryx Design Tokens ─────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   Zentryx × Persona 3 — Color System
+   Accent split: --zx-accent = purple-blue (borders/labels/icons)
+                 --zx-accent-bright = cyan (primary CTAs only)
+                 --zx-secondary = gold (active nav states)
+   ══════════════════════════════════════════════════════════════ */
 :root {
-  --zx-bg:            #09090B;
-  --zx-surface:       #111114;
-  --zx-surface-2:     #18181C;
-  --zx-surface-3:     #1F1F24;
-  --zx-border:        #26262B;
-  --zx-border-2:      #323238;
+  /* ── Backgrounds (dark indigo/purple, clearly non-black) ──── */
+  --zx-bg:               #05060f;   /* page canvas                  */
+  --zx-sidebar:          #080a1a;   /* sidebar — slightly distinct  */
+  --zx-surface:          #0b0d1f;   /* main panels / content areas  */
+  --zx-surface-2:        #0e1028;   /* cards                        */
+  --zx-surface-3:        #131630;   /* nested rows / hover cells    */
+  --zx-surface-card:     #0b0c1e;   /* table row even               */
+  --zx-surface-elevated: #0e1030;   /* table row odd                */
 
-  --zx-accent:        #C5A059;
-  --zx-accent-muted:  #C5A05930;
-  --zx-accent-hover:  #D4B46A;
+  /* ── Borders (purple-tinted, exact RGB of #7c6fff = 124,111,255) */
+  --zx-border:        rgba(124, 111, 255, 0.20);
+  --zx-border-2:      rgba(124, 111, 255, 0.40);
+  --zx-border-subtle: rgba(124, 111, 255, 0.08);  /* row dividers   */
 
-  --zx-text-1:        #F0EDE6;
-  --zx-text-2:        #A8A4A0;
-  --zx-text-3:        #5C5A58;
+  /* ── Primary accent — electric purple-blue ─────────────────
+     Use for: borders, section labels, panel titles,
+              icon containers, sidebar logo, chart fills         */
+  --zx-accent:        #7c6fff;
+  --zx-accent-muted:  rgba(124, 111, 255, 0.15);
+  --zx-accent-hover:  #9d8fff;   /* lighter purple on hover       */
 
-  --zx-success:       #3D9B6E;
-  --zx-success-muted: #3D9B6E25;
-  --zx-danger:        #D95B45;
-  --zx-danger-muted:  #D95B4525;
-  --zx-warning:       #D4953A;
-  --zx-warning-muted: #D4953A25;
-  --zx-info:          #4A90D9;
-  --zx-info-muted:    #4A90D925;
+  /* ── Bright cyan — reserved for primary CTAs only ──────────
+     Use for: primary button bg, page-title underline bar        */
+  --zx-accent-bright:       #00b4ff;
+  --zx-accent-bright-hover: #33c8ff;  /* cyan button hover         */
+
+  /* ── Secondary accent — golden yellow (active / selected) ── */
+  --zx-secondary:       #f5c518;
+  --zx-secondary-muted: rgba(245, 197, 24, 0.12);
+
+  /* ── Text ──────────────────────────────────────────────────  */
+  --zx-text-1:        #ffffff;
+  --zx-text-2:        rgba(255, 255, 255, 0.50);
+  --zx-text-3:        rgba(255, 255, 255, 0.28);
+  --zx-text-on-dark:  #ffffff;   /* text on colored backgrounds   */
+
+  /* ── Status ─────────────────────────────────────────────────  */
+  --zx-success:       #00ff88;
+  --zx-success-muted: rgba(0, 255, 136, 0.12);
+  --zx-danger:        #ff3250;
+  --zx-danger-muted:  rgba(255, 50, 80, 0.12);
+  --zx-warning:       #f5c518;
+  --zx-warning-muted: rgba(245, 197, 24, 0.12);
+  --zx-info:          #7c6fff;   /* purple for informational      */
+  --zx-info-muted:    rgba(124, 111, 255, 0.12);
+
+  /* ── Card top-strip colors ──────────────────────────────────  */
+  --card-border-top-default: rgba(124, 111, 255, 0.40);
+  --card-border-top-danger:  rgba(255, 50, 80, 0.60);
+  --card-border-top-warning: rgba(245, 197, 24, 0.60);
+  --card-border-top-success: rgba(0, 255, 136, 0.50);
+
+  /* ── Avatar ─────────────────────────────────────────────────  */
+  --zx-avatar-bg:     rgba(124, 111, 255, 0.15);
+  --zx-avatar-border: rgba(124, 111, 255, 0.30);
+  --zx-avatar-text:   #a99fff;   /* soft lavender                  */
+
+  /* ── Badge surfaces (10% bg / 30% border per variant) ───────  */
+  --zx-badge-default-bg:     rgba(124, 111, 255, 0.10);
+  --zx-badge-default-color:  #a99fff;
+  --zx-badge-default-border: rgba(124, 111, 255, 0.30);
+  --zx-badge-success-bg:     rgba(0, 255, 136, 0.10);
+  --zx-badge-success-border: rgba(0, 255, 136, 0.30);
+  --zx-badge-danger-bg:      rgba(255, 50, 80, 0.10);
+  --zx-badge-danger-border:  rgba(255, 50, 80, 0.30);
+  --zx-badge-warning-bg:     rgba(245, 197, 24, 0.10);
+  --zx-badge-warning-border: rgba(245, 197, 24, 0.30);
+  --zx-badge-info-bg:        rgba(124, 111, 255, 0.10);
+  --zx-badge-info-border:    rgba(124, 111, 255, 0.30);
+  --zx-badge-accent-bg:      rgba(0, 180, 255, 0.10);
+  --zx-badge-accent-border:  rgba(0, 180, 255, 0.30);
+
+  /* ── Component-specific ─────────────────────────────────────  */
+  --zx-gradient-card:  linear-gradient(135deg, #0e1028 0%, #0f0e2a 100%);
+  --zx-icon-border:    rgba(0, 180, 255, 0.25);   /* icon box border in cards   */
+  --zx-logo-glow:      rgba(124, 111, 255, 0.07); /* sidebar logo radial glow   */
+  --zx-ring-outer:     rgba(124, 111, 255, 0.05); /* decorative 700px ring      */
+  --zx-ring-inner:     rgba(124, 111, 255, 0.04); /* decorative 450px ring      */
+  --zx-overlay:        rgba(0, 0, 0, 0.60);       /* modal/drawer backdrop      */
+  --zx-bronze:         #cd7f32;                   /* bronze medal / 3rd rank    */
 }
 
 @theme inline {
@@ -37,6 +99,7 @@
   --color-zx-accent:        var(--zx-accent);
   --color-zx-accent-muted:  var(--zx-accent-muted);
   --color-zx-accent-hover:  var(--zx-accent-hover);
+  --color-zx-accent-bright: var(--zx-accent-bright);
   --color-zx-text-1:        var(--zx-text-1);
   --color-zx-text-2:        var(--zx-text-2);
   --color-zx-text-3:        var(--zx-text-3);
@@ -52,31 +115,113 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* ── Base ─────────────────────────────────────────────────── */
-html { color-scheme: dark; }
+/* ── Base ────────────────────────────────────────────────────  */
+html {
+  color-scheme: dark;
+  background: #05060f;
+}
 
 body {
-  background: var(--zx-bg);
-  color: var(--zx-text-1);
+  background: #05060f !important;
+  color: #ffffff;
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Scrollbar ───────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--zx-surface); }
-::-webkit-scrollbar-thumb {
-  background: var(--zx-border-2);
-  border-radius: 99px;
+/* ── Square corners everywhere (Persona 3 aesthetic) ─────────  */
+*, *::before, *::after {
+  border-radius: 0 !important;
 }
+
+/* Spinner — must stay circular */
+.p3-circle {
+  border-radius: 50% !important;
+}
+
+/* Decorative ring shapes */
+.p3-ring {
+  border-radius: 50% !important;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────  */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--zx-surface); }
+::-webkit-scrollbar-thumb { background: rgba(124, 111, 255, 0.30); }
 ::-webkit-scrollbar-thumb:hover { background: var(--zx-accent); }
 
-/* ── Utility classes ─────────────────────────────────────── */
-.zx-row:hover { background: var(--zx-surface-2); }
+/* ── Utility classes ──────────────────────────────────────────  */
+.zx-row:hover  { background: var(--zx-surface-3); }
 .zx-card:hover { border-color: var(--zx-border-2); }
 .zx-btn-ghost:hover { background: var(--zx-surface-2); }
 
-/* ── Animations ──────────────────────────────────────────── */
+/* ── Persona 3 Typography ─────────────────────────────────────  */
+/* Page title with skewed accent bar — uses cyan (bright) to pop */
+.p3-page-title {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.p3-page-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 80px;
+  height: 3px;
+  background: var(--zx-accent-bright);  /* cyan — most prominent title element */
+  transform: skewX(-15deg);
+  transform-origin: left center;
+}
+
+.p3-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--zx-text-3);
+}
+
+.p3-panel-title {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--zx-accent);  /* purple for panel titles */
+}
+
+.p3-glow {
+  box-shadow: 0 0 0 1px var(--zx-accent), 0 0 12px var(--zx-accent-muted);
+}
+
+/* Background ring decorations (atmospheric) — sidebar only */
+.p3-bg-rings {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.p3-bg-rings::before,
+.p3-bg-rings::after {
+  content: '';
+  position: absolute;
+  border: 1px solid var(--zx-accent);
+  opacity: 0.04;
+  border-radius: 50% !important;
+}
+.p3-bg-rings::before {
+  width: 400px; height: 400px;
+  top: -100px; right: -100px;
+}
+.p3-bg-rings::after {
+  width: 250px; height: 250px;
+  bottom: -60px; left: -60px;
+}
+
+/* ── Animations ───────────────────────────────────────────────  */
 @keyframes shimmer {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }

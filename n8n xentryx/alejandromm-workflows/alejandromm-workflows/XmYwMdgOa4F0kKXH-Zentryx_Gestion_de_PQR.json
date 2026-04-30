@@ -1,0 +1,153 @@
+{
+  "name": "Zentryx - Gestion de PQR",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zentryx/pqr/analyze",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b922a329-e311-48d6-adf0-37d6282b43d2",
+      "name": "Recibir Caso PQR",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "16024c74-3884-4467-b3e7-62784daf756e",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza el siguiente caso PQR de Recursos Humanos y genera una respuesta profesional.\n\nTipo: {{ $json.body.type }}\nAsunto: {{ $json.body.subject }}\nDescripcion: {{ $json.body.description }}\nEmpleado: {{ $json.body.submittedBy }}\nDepartamento: {{ $json.body.department }}\nPrioridad actual: {{ $json.body.priority }}\n\nGenera sugerencia de respuesta en espanol, recomienda prioridad apropiada (low/medium/high) y estima dias de resolucion segun normativa laboral colombiana.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres un experto en gestion de PQR de Recursos Humanos en Colombia. Conoces la normativa laboral colombiana y generas respuestas profesionales, empaticas y conformes a la ley. Siempre respondes en espanol."
+        }
+      },
+      "id": "74848811-1478-4158-8d9c-9a04376a6612",
+      "name": "Generar Respuesta PQR con IA",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        544,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{ \"suggestion\": \"Estimado empleado, hemos recibido su solicitud y la procesaremos a la brevedad.\", \"suggestedPriority\": \"medium\", \"estimatedDays\": 3, \"category\": \"administrativa\" }"
+      },
+      "id": "b026edbb-21fc-4936-8c74-b501718863bc",
+      "name": "Parser Respuesta PQR",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"suggestion\": $json.output.suggestion, \"suggestedPriority\": $json.output.suggestedPriority, \"estimatedDays\": $json.output.estimatedDays, \"category\": $json.output.category } }}",
+        "options": {}
+      },
+      "id": "0bba7889-416c-4f69-8faf-4793d7a69a5a",
+      "name": "Enviar Sugerencia PQR",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        848,
+        304
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        544
+      ],
+      "id": "3ac93d71-abfa-4297-9ae6-80035a186e82",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "2iteoDixxVFen9QF",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Recibir Caso PQR": {
+      "main": [
+        [
+          {
+            "node": "Generar Respuesta PQR con IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Respuesta PQR con IA": {
+      "main": [
+        [
+          {
+            "node": "Enviar Sugerencia PQR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Respuesta PQR": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generar Respuesta PQR con IA",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generar Respuesta PQR con IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "templateCredsSetupCompleted": true
+  }
+}
