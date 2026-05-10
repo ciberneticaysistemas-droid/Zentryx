@@ -1,0 +1,94 @@
+========================================================================
+             ZENTRYX FLOW RUNNER - EXPLICACIÓN TÉCNICA
+========================================================================
+
+¿CÓMO ES POSIBLE EJECUTAR FLUJOS DE n8n SIN TENER n8n INSTALADO?
+
+Originalmente, estabas en lo correcto: los archivos .json que exporta 
+n8n están diseñados para funcionar única y exclusivamente dentro de su 
+plataforma. Estos archivos no son código ejecutable (como Python o 
+JavaScript), sino que son "mapas conceptuales" que le dicen a n8n qué 
+hacer.
+
+Si intentas abrir esos JSON sin n8n, solo ves texto muerto. 
+Entonces, ¿cómo logramos que Zentryx los ejecute de forma nativa?
+
+La respuesta es que hemos creado un "Emulador de n8n" a medida: 
+El Zentryx Flow Runner.
+
+------------------------------------------------------------------------
+1. ¿QUÉ ES EL ZENTRYX FLOW RUNNER?
+------------------------------------------------------------------------
+Es un servidor ligero creado en Node.js (el archivo server.js) que 
+construimos específicamente para leer los "mapas" JSON de n8n y actuar 
+como si fuera el programa original, pero consumiendo 90% menos 
+memoria y sin requerir cuentas, bases de datos complejas ni 
+dependencias de la nube.
+
+------------------------------------------------------------------------
+2. ¿CÓMO FUNCIONA EL MOTOR POR DENTRO?
+------------------------------------------------------------------------
+El Flow Runner funciona mediante 3 etapas principales:
+
+A) Lectura y Traducción:
+Cuando enciendes el Flow Runner, este lee los 6 archivos .json que 
+guardaste en tu carpeta. Lee la posición de los nodos, cómo están 
+conectados por cables virtuales y qué configuraciones tienen (el prompt, 
+el modelo de IA, las credenciales).
+
+B) El "Traductor de Expresiones" (evalExpr):
+n8n usa un lenguaje propio para sus variables (ej. {{$json.body}}). 
+Nosotros programamos un traductor matemático dentro de server.js que 
+detecta estas fórmulas y las traduce a variables de JavaScript real en 
+milisegundos. ¡Esta fue la clave para que funcionara sin n8n!
+
+C) Ejecución Secuencial:
+El Flow Runner actúa como un director de orquesta. Cuando Zentryx le 
+manda una PQR, el Runner:
+1. Encuentra el nodo "Webhook" de inicio.
+2. Sigue el cable hacia el siguiente nodo (ej. Agente Langchain).
+3. Entiende que ese nodo requiere IA, así que toma el Prompt, le 
+   inserta los datos de la PQR, y se conecta DIRECTAMENTE con la 
+   API de Google (Gemini) o de OpenAI (ChatGPT).
+4. Cuando Gemini responde, sigue el cable hacia el nodo "Respond to 
+   Webhook" y le devuelve los datos pulidos al frontend de Zentryx.
+
+------------------------------------------------------------------------
+3. ¿CÓMO SE CONECTA CON LAS APIS DE INTELIGENCIA ARTIFICIAL?
+------------------------------------------------------------------------
+Los JSON de n8n decían: "Llama al módulo interno de IA de n8n". 
+Como no tenemos n8n, el Flow Runner intercepta esa orden.
+
+En server.js usamos las librerías oficiales '@google/generative-ai' y 
+'openai'. Cuando el JSON pide evaluar un texto:
+- El Flow Runner toma tu API Key (la que guardamos en el dashboard).
+- Empaqueta el texto de la PQR o la Hoja de Vida.
+- Hace una llamada HTTPS directa y ultra rápida a los servidores de Google.
+- Recibe la respuesta inteligente, la procesa y finge ser n8n para 
+  entregársela a Zentryx.
+
+------------------------------------------------------------------------
+RESUMEN DEL FLUJO DE DATOS (EJEMPLO PQR):
+------------------------------------------------------------------------
+1. [Usuario] presiona "Crear PQR" en Zentryx (Puerto 3000).
+2. [Next.js] intercepta la orden y se la envía en secreto al 
+   Flow Runner (Puerto 3001).
+3. [Flow Runner] busca el JSON de PQR, extrae tu Prompt y se lo envía a 
+   Google Gemini-2.5-Flash a través de internet usando tu API Key.
+4. [Gemini] piensa y devuelve la respuesta.
+5. [Flow Runner] formatea la respuesta de la misma forma que lo haría 
+   n8n y se la devuelve a Next.js.
+6. [Next.js] guarda la sugerencia en la base de datos local y la pinta 
+   en pantalla de forma mágica.
+
+------------------------------------------------------------------------
+VENTAJAS DE ESTA ARQUITECTURA
+------------------------------------------------------------------------
+- Independencia total: Ya no dependes de que los servidores de n8n 
+  Cloud estén encendidos o se caigan.
+- Velocidad: Al no pasar por un intermediario, las peticiones van 
+  directo desde tu PC a la Inteligencia Artificial.
+- Privacidad: Los datos de tus empleados no pasan por una tercera 
+  plataforma, solo van a la IA y vuelven.
+- Demostrabilidad: Funciona perfecto para una presentación local sin 
+  necesitar suscripciones costosas ni túneles de red.

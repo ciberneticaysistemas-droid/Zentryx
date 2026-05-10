@@ -1,4 +1,6 @@
-const N8N_BASE = process.env.N8N_BASE_URL || 'https://alejandromm.app.n8n.cloud/webhook';
+// Zentryx Pythia local (http://127.0.0.1:3001) — reemplaza n8n Cloud.
+// Para producción, define la variable de entorno N8N_BASE_URL.
+const N8N_BASE = process.env.N8N_BASE_URL || 'http://127.0.0.1:3001/webhook';
 
 // In-memory rate limiting to prevent spamming n8n
 declare global {
@@ -35,7 +37,7 @@ export async function proxyToN8N(path: string, req: Request): Promise<Response> 
     const body = await req.text();
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout for AI
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for AI
 
     let upstream;
     try {

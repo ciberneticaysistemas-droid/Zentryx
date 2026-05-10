@@ -1,0 +1,101 @@
+{
+  "name": "Zentryx - Enviar Documento por Correo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zentryx/communications/send-document",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e7bac620-0610-4f4f-8413-0ac63e8aff6c",
+      "name": "Recibir Solicitud de Envio",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "bfc36910-5349-4451-9891-07bac3a3d8d1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.recipientEmail }}",
+        "subject": "={{ $json.body.subject }}",
+        "message": "=<h2>Documento Zentryx HCM</h2><p>Estimado/a colaborador/a,</p><p>Adjunto encontrara el siguiente documento generado por el sistema Zentryx HCM:</p><hr/><pre style=\"font-family:monospace;font-size:13px;white-space:pre-wrap\">{{ $json.body.docContent }}</pre><hr/><p><em>Enviado automaticamente por Zentryx HCM</em></p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "03f0e41b-a1b7-4993-bb69-c2295573c4a1",
+      "name": "Enviar Documento al Empleado",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        304
+      ],
+      "webhookId": "b4c13e4b-e4bc-4ea3-aa81-9ef17f3e04c1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pUXkdlhWM5Tq0Haz",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": {
+          "success": true,
+          "message": "Documento enviado exitosamente"
+        },
+        "options": {}
+      },
+      "id": "8b6df390-6bdc-4df4-b9f1-7a3d0c4d5d10",
+      "name": "Confirmar Envio",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        848,
+        304
+      ]
+    }
+  ],
+  "connections": {
+    "Recibir Solicitud de Envio": {
+      "main": [
+        [
+          {
+            "node": "Enviar Documento al Empleado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Documento al Empleado": {
+      "main": [
+        [
+          {
+            "node": "Confirmar Envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "templateCredsSetupCompleted": true
+  }
+}

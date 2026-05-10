@@ -9,8 +9,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content area */}
       <main
-        className="flex-1 ml-60 flex flex-col min-h-screen"
-        style={{ background: 'var(--zx-bg)', position: 'relative', overflow: 'hidden' }}
+        className="flex-1 ml-60 flex flex-col min-h-screen h-screen"
+        style={{ background: 'var(--zx-bg)', position: 'relative', overflowY: 'auto' }}
       >
         {/* Decorative atmosphere circles — pointer-events: none, behind all content */}
         <div

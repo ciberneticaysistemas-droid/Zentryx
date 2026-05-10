@@ -180,7 +180,7 @@ export default function CommunicationsPage() {
       });
       toast('success', `Documento enviado a ${emailTo.trim()}`);
     } catch {
-      toast('error', 'Error al enviar. Verifica que el flujo n8n este activo y Gmail configurado.');
+      toast('error', 'Error al enviar. Verifica que los flujos esten activos y Gmail configurado.');
     } finally {
       setSending(false);
     }

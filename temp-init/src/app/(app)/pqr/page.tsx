@@ -163,7 +163,7 @@ export default function PQRPage() {
         toast('success', 'Sugerencia IA lista para la PQR.');
       })
       .catch(() => {
-        toast('error', 'No se pudo obtener la sugerencia IA. Verifica que el flujo n8n este activo.');
+        toast('error', 'No se pudo obtener la sugerencia IA. Verifica que los flujos esten activos.');
       })
       .finally(() => {
         setAnalyzingIds(prev => { const s = new Set(prev); s.delete(saved.id); return s; });

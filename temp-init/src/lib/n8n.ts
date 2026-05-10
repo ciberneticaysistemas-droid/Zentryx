@@ -104,21 +104,46 @@ export async function sendDocument(params: {
 
 export function readFileAsText(file: File): Promise<string> {
   return new Promise((resolve) => {
+    const isBinary = file.type === 'application/pdf' || 
+                     file.name.endsWith('.pdf') || 
+                     file.name.endsWith('.docx') || 
+                     file.name.endsWith('.doc');
+
     const reader = new FileReader();
 
     reader.onload = (e) => {
-      const text = (e.target?.result as string) ?? '';
-      const printable = (text.match(/[\x20-\x7E\n\r\t\u00C0-\u024F]/g) ?? []).length;
-      const ratio = text.length > 0 ? printable / text.length : 0;
+      const result = e.target?.result;
+      if (!result) {
+        resolve(`Archivo vacío: ${file.name}`);
+        return;
+      }
 
-      if (ratio >= 0.65) {
-        resolve(text.slice(0, 4000));
+      if (isBinary) {
+        // Enviar como base64 (incluyendo el prefijo data:...)
+        resolve(result as string);
       } else {
-        resolve(`Archivo cargado: ${file.name}`);
+        const text = result as string;
+        const printable = (text.match(/[\x20-\x7E\n\r\t\u00C0-\u024F]/g) ?? []).length;
+        const ratio = text.length > 0 ? printable / text.length : 0;
+
+        if (ratio >= 0.65) {
+          resolve(text.slice(0, 8000)); // Aumentado a 8000
+        } else {
+          // Si parece binario a pesar de no tener extensión conocida, enviar como base64
+          const binaryReader = new FileReader();
+          binaryReader.onload = (be) => resolve(be.target?.result as string);
+          binaryReader.readAsDataURL(file);
+        }
       }
     };
 
-    reader.onerror = () => resolve(`Archivo cargado: ${file.name}`);
-    reader.readAsText(file, 'utf-8');
+    reader.onerror = () => resolve(`Error al leer archivo: ${file.name}`);
+    
+    if (isBinary) {
+      reader.readAsDataURL(file);
+    } else {
+      reader.readAsText(file, 'utf-8');
+    }
   });
 }
+

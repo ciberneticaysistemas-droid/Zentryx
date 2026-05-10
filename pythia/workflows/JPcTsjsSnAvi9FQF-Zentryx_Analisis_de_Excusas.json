@@ -1,35 +1,35 @@
 {
-  "name": "Zentryx - Gestion de PQR",
+  "name": "Zentryx - Analisis de Excusas",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "zentryx/pqr/analyze",
+        "path": "zentryx/absences/analyze",
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "b922a329-e311-48d6-adf0-37d6282b43d2",
-      "name": "Recibir Caso PQR",
+      "id": "87556946-2355-4250-acd3-d3951ad98b45",
+      "name": "Recibir Excusa de Ausencia",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
         240,
         304
       ],
-      "webhookId": "16024c74-3884-4467-b3e7-62784daf756e",
+      "webhookId": "6f0e7eca-728b-4330-8d28-5c0fed8dca68",
       "alwaysOutputData": true
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Analiza el siguiente caso PQR de Recursos Humanos.\n\nTipo: {{ $json.body.type }}\nAsunto: {{ $json.body.subject }}\nDescripcion: {{ $json.body.description }}\nEmpleado: {{ $json.body.submittedBy }}\nDepartamento: {{ $json.body.department }}\n\nGenera una sugerencia de respuesta directa, precisa y orientada a la resolucion practica. Evita preambulos largos. Si aplica normativa colombiana laboral, mencionala muy brevemente. Ademas, recomienda la prioridad (low/medium/high) y estima los dias de resolucion.",
+        "text": "=Analiza la siguiente justificacion de ausencia laboral segun la normativa colombiana.\n\nEmpleado: {{ $json.body.employeeName }}\nTipo de ausencia: {{ $json.body.type }}\nPeriodo: {{ $json.body.startDate }} hasta {{ $json.body.endDate }}\nDescripcion del documento: {{ $json.body.documentDescription }}\n\nDetermina: verdict (accepted/rejected/review), confidence (0-100) y summary de 2-3 oraciones explicando el veredicto en espanol.",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "Eres un experto en gestion de PQR de Recursos Humanos en Colombia. Conoces la normativa laboral colombiana y generas respuestas profesionales, empaticas y conformes a la ley. Siempre respondes en espanol."
+          "systemMessage": "Eres un experto en legislacion laboral colombiana especializado en validacion de incapacidades y ausencias. Evaluas objetivamente la validez de los documentos segun el Codigo Sustantivo del Trabajo y normativas del Ministerio de Salud. Responde en espanol."
         }
       },
-      "id": "74848811-1478-4158-8d9c-9a04376a6612",
-      "name": "Generar Respuesta PQR con IA",
+      "id": "40262395-8242-4e49-9ec6-47bbf1d71133",
+      "name": "Analizar Justificacion de Ausencia",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
@@ -39,10 +39,10 @@
     },
     {
       "parameters": {
-        "jsonSchemaExample": "{ \"suggestion\": \"Estimado empleado, hemos recibido su solicitud y la procesaremos a la brevedad.\", \"suggestedPriority\": \"medium\", \"estimatedDays\": 3, \"category\": \"administrativa\" }"
+        "jsonSchemaExample": "{ \"verdict\": \"accepted\", \"confidence\": 96, \"summary\": \"Certificado medico valido emitido por entidad autorizada. Diagnostico y firma legibles.\" }"
       },
-      "id": "b026edbb-21fc-4936-8c74-b501718863bc",
-      "name": "Parser Respuesta PQR",
+      "id": "62dfc626-96d5-4a78-b468-852cc647cfca",
+      "name": "Parser Veredicto Excusa",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
@@ -53,11 +53,11 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"suggestion\": $json.output.suggestion, \"suggestedPriority\": $json.output.suggestedPriority, \"estimatedDays\": $json.output.estimatedDays, \"category\": $json.output.category } }}",
+        "responseBody": "={{ { \"success\": true, \"verdict\": $json.output.verdict, \"confidence\": $json.output.confidence, \"summary\": $json.output.summary } }}",
         "options": {}
       },
-      "id": "0bba7889-416c-4f69-8faf-4793d7a69a5a",
-      "name": "Enviar Sugerencia PQR",
+      "id": "20141d43-df45-49fd-907b-5a56a574a974",
+      "name": "Enviar Veredicto Excusa",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
@@ -79,10 +79,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        512,
-        544
+        480,
+        528
       ],
-      "id": "3ac93d71-abfa-4297-9ae6-80035a186e82",
+      "id": "7ab1f06e-ee1b-4b79-9f8a-b83baf589170",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -93,33 +93,33 @@
     }
   ],
   "connections": {
-    "Recibir Caso PQR": {
+    "Recibir Excusa de Ausencia": {
       "main": [
         [
           {
-            "node": "Generar Respuesta PQR con IA",
+            "node": "Analizar Justificacion de Ausencia",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Generar Respuesta PQR con IA": {
+    "Analizar Justificacion de Ausencia": {
       "main": [
         [
           {
-            "node": "Enviar Sugerencia PQR",
+            "node": "Enviar Veredicto Excusa",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Parser Respuesta PQR": {
+    "Parser Veredicto Excusa": {
       "ai_outputParser": [
         [
           {
-            "node": "Generar Respuesta PQR con IA",
+            "node": "Analizar Justificacion de Ausencia",
             "type": "ai_outputParser",
             "index": 0
           }
@@ -130,7 +130,7 @@
       "ai_languageModel": [
         [
           {
-            "node": "Generar Respuesta PQR con IA",
+            "node": "Analizar Justificacion de Ausencia",
             "type": "ai_languageModel",
             "index": 0
           }

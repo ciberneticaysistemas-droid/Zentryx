@@ -106,7 +106,7 @@ export default function RecruitmentPage() {
     } catch (err) {
       clearInterval(ticker);
       console.error('n8n recruitment error:', err);
-      toast('error', 'Error al conectar con el servicio de IA. Verifica que el flujo de n8n este activo.');
+      toast('error', 'Error al conectar con el servicio de IA. Verifica que los flujos esten activos.');
     } finally {
       setProgress(0);
       setAnalyzing(false);

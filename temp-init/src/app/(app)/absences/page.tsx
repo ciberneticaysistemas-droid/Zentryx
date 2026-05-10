@@ -152,7 +152,7 @@ export default function AbsencesPage() {
       console.error('n8n absences error:', err);
       setStage('idle');
       setProgress(0);
-      toast('error', 'Error al conectar con el servicio de IA. Verifica que el flujo n8n este activo.');
+      toast('error', 'Error al conectar con el servicio de IA. Verifica que los flujos esten activos.');
     }
   };
 
@@ -162,7 +162,7 @@ export default function AbsencesPage() {
 
   return (
     <>
-      <Header title="Justificaciones de Ausencia" subtitle="Módulo de análisis IA · PDF / JPG" />
+      <Header title="Justificaciones de Ausencia" subtitle="Módulo de análisis IA · PDF / Word / JPG" />
 
       <div className="flex-1 p-6 space-y-5 animate-fade-in-up">
 
@@ -229,7 +229,7 @@ export default function AbsencesPage() {
                 background: stage === 'done' ? 'var(--zx-success-muted)' : 'var(--zx-surface-2)',
                 border: `2px dashed ${stage === 'done' ? 'var(--zx-success)' : stage !== 'idle' ? 'var(--zx-accent)' : 'var(--zx-border-2)'}`,
               }}>
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only"
+              <input type="file" accept=".pdf,.docx,.doc,.jpg,.jpeg,.png" className="sr-only"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
                 disabled={stage !== 'idle'} />
 
@@ -254,7 +254,7 @@ export default function AbsencesPage() {
                 </p>
                 {stage === 'idle' && (
                   <p className="text-xs mt-1" style={{ color:'var(--zx-text-3)' }}>
-                    Incapacidades · Citas médicas · Calamidades — PDF, JPG, PNG
+                    Incapacidades · Citas médicas · Calamidades — PDF, Word, JPG, PNG
                   </p>
                 )}
                 {pendingFile && stage !== 'idle' && (

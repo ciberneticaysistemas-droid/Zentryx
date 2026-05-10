@@ -1,0 +1,28 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (NUNCA commitear claves)
+.env
+.env.local
+.env.production
+
+# Base de datos SQLite (se crea automáticamente)
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Archivos temporales de desarrollo
+scratch_test.js
+list_models.js

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pythia</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg:        #0a0f0a;
+    --bg2:       #0d130d;
+    --bg3:       #111911;
+    --sidebar:   #0c110c;
+    --border:    #1e3a1e;
+    --green:     #00ff41;
+    --green-dim: #00c032;
+    --green-muted: #1a6b1a;
+    --text:      #c8e6c8;
+    --text-dim:  #5a8a5a;
+    --accent:    #39ff14;
+    --red:       #ff3b3b;
+    --yellow:    #ffd700;
+    --card-bg:   #0e160e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 20px;
+    height: 52px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    color: var(--green);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--green);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #000;
+    font-weight: 900;
+    font-size: 16px;
+  }
+
+  .api-fields {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .api-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 0 12px;
+    height: 34px;
+    border-radius: 4px;
+    flex: 1;
+    max-width: 260px;
+  }
+  .api-field span {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--green-dim);
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+  .api-field input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    width: 100%;
+  }
+  .api-field input::placeholder { color: var(--text-dim); opacity: 0.5; }
+
+  .btn-save {
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    padding: 0 18px;
+    height: 34px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+  .btn-save:hover { opacity: 0.8; }
+
+  .flows-count {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .flows-count span { color: var(--green); }
+
+  /* ── MAIN ── */
+  .main-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── LEFT SIDEBAR (icon rail) ── */
+  .sidebar-icons {
+    width: 44px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .s-icon {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .s-icon:hover, .s-icon.active { background: var(--green-muted); color: var(--green); }
+  .s-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+  /* ── LEFT PANEL (nav tree) ── */
+  .left-panel {
+    width: 220px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    padding: 16px 0;
+  }
+
+  .nav-section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    padding: 4px 16px 8px;
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .nav-item:hover { background: rgba(0,255,65,0.04); color: var(--text); }
+  .nav-item.active {
+    background: rgba(0,255,65,0.08);
+    color: var(--green);
+    border-left: 2px solid var(--green);
+  }
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .nav-item.active .nav-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+  /* ── CONTENT ── */
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 24px 28px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .content-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px;
+    color: var(--green);
+    letter-spacing: 0.04em;
+  }
+  .section-comment {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    letter-spacing: 0.06em;
+  }
+  .active-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    border: 1px solid var(--green-muted);
+    padding: 4px 12px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── FLOW CARDS ── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .flow-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: border-color 0.15s, transform 0.1s;
+    cursor: pointer;
+  }
+  .flow-card:hover { border-color: var(--green-dim); transform: translateX(4px); }
+
+  .flow-icon {
+    width: 40px; height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: var(--green-dim);
+    font-size: 16px;
+  }
+
+  .flow-info { flex: 1; min-width: 0; }
+  .flow-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
+  }
+  .flow-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .flow-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    letter-spacing: 0.05em;
+  }
+  .flow-meta .provider { color: var(--green-dim); }
+
+  .flow-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .status-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .status-badge.activo  { color: var(--green); border: 1px solid var(--green-muted); }
+  .status-badge.pausado { color: var(--yellow); border: 1px solid rgba(255,215,0,0.3); }
+
+  .btn-run {
+    background: none;
+    border: 1px solid var(--green-muted);
+    color: var(--green);
+    border-radius: 3px;
+    padding: 6px 18px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s;
+  }
+  .btn-run:hover { background: rgba(0,255,65,0.1); }
+
+  /* ── MODAL ── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    backdrop-filter: blur(4px);
+  }
+  .overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; width: 100%; max-maxWidth: 760px; max-height: 90vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  }
+  .modal-head {
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg3);
+  }
+  .modal-head h2 { font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; color: var(--green); }
+  .btn-close {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-dim); width: 32px; height: 32px; border-radius: 4px;
+    cursor: pointer; font-size: 1rem; display: grid; place-items: center;
+  }
+  .btn-close:hover { color: var(--red); border-color: var(--red); }
+  .modal-body { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+  .form-group label { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text-dim); text-transform: uppercase; }
+  .form-group input, .form-group select, .form-group textarea {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text); padding: 10px 12px; font-size: 13px; font-family: 'Rajdhani', sans-serif;
+    outline: none; transition: border .2s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--green); }
+  .btn-execute {
+    background: var(--green); border: none; color: #000; padding: 12px 28px; border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; align-self: flex-start; text-transform: uppercase;
+  }
+  .btn-execute:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── LOGS ── */
+  .logs-panel {
+    background: #050805; border: 1px solid var(--border); border-radius: 4px;
+    padding: 16px; min-height: 120px; max-height: 220px; overflow-y: auto;
+    font-family: 'Share Tech Mono', monospace; font-size: 12px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .log-entry { display: flex; gap: 10px; line-height: 1.5; }
+  .log-time { color: var(--text-dim); flex-shrink: 0; }
+  .log-start { color: var(--green); }
+  .log-node { color: #a855f7; }
+  .log-ai { color: var(--yellow); }
+  .log-success { color: var(--green); }
+  .log-error { color: var(--red); }
+  .log-warn { color: var(--yellow); }
+  .log-http { color: #38bdf8; }
+  .log-info { color: var(--text); }
+
+  /* ── RESULT ── */
+  .result-panel { background: #050805; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .result-header { padding: 10px 16px; background: rgba(0,255,65,0.05); border-bottom: 1px solid var(--border); font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--green); }
+  pre { padding: 16px; font-size: 12px; font-family: 'Share Tech Mono', monospace; overflow-x: auto; line-height: 1.6; color: #a5f3fc; max-height: 260px; overflow-y: auto; }
+
+  /* ── SPINNER ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(0,255,65,0.2); border-top-color: var(--green); border-radius: 50%; animation: spin .6s linear infinite; }
+
+  .token-monitor {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 180px;
+    padding-right: 15px;
+    border-right: 1px solid var(--border);
+  }
+  .token-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .token-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .token-bar-fill {
+    height: 100%;
+    background: var(--green);
+    width: 0%;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 8px var(--green-muted);
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">P</div>
+    <span id="brandName"></span><strong>PYTHIA</strong>
+  </div>
+
+  <div class="api-fields">
+    <div class="api-field">
+      <span>◆ OpenAI</span>
+      <input type="password" id="openaiKey" placeholder="sk-...">
+    </div>
+    <div class="api-field">
+      <span>◆ Gemini</span>
+      <input type="password" id="geminiKey" placeholder="AIza...">
+    </div>
+  </div>
+
+  <button class="btn-save" onclick="saveKeys()">Guardar claves</button>
+  
+  <div class="token-monitor">
+    <div class="token-label">
+      <span>Consumo Sesión</span>
+      <span id="tokenPercent">0%</span>
+    </div>
+    <div class="token-bar-bg">
+      <div class="token-bar-fill" id="tokenBarFill"></div>
+    </div>
+    <div class="token-label" style="opacity:0.7">
+      <span id="tokenTotal">0 TKN</span>
+      <span>LIM: 1M</span>
+    </div>
+  </div>
+
+  <div class="flows-count"><span id="flowCount">0</span> flujos</div>
+</div>
+
+<div class="main-layout">
+  <!-- Icon rail -->
+  <nav class="sidebar-icons">
+    <div class="s-icon active">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    </div>
+    <div class="s-icon">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9h.01M15 9h.01M9 15s1 2 3 2 3-2 3-2"/></svg>
+    </div>
+    <div class="s-icon">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <div class="s-icon" style="margin-top:auto;">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
+    </div>
+  </nav>
+
+  <!-- Nav panel -->
+  <nav class="left-panel">
+    <div class="nav-section-label">// Sistema</div>
+    <div class="nav-item active">
+      <span class="nav-dot"></span>
+      Flujos
+    </div>
+    <div class="nav-item">
+      <span class="nav-dot"></span>
+      Configuración
+    </div>
+
+    <div class="nav-section-label" style="margin-top:16px;">Vistas</div>
+    <div class="nav-item">
+      <span class="nav-dot"></span>
+      Logs Globales
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <main class="content">
+    <div class="content-header">
+      <div>
+        <div class="section-comment">// SISTEMA ACTIVO</div>
+        <div class="section-title">FLUJOS DISPONIBLES</div>
+      </div>
+      <div class="active-badge" id="flowCountBadge">Cargando...</div>
+    </div>
+
+    <div class="grid" id="flowGrid">
+      <div style="color:var(--text-dim);font-family:'Share Tech Mono';">Iniciando sistemas...</div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2 id="modalTitle">Ejecutar flujo</h2>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ─── Definición de formularios ─────────────────────────────────────────────
+const FLOW_FORMS = {
+  'Zentryx - Análisis de Excusas': { icon:'📋', provider:'OpenAI' },
+  'Zentryx - Gestion de PQR': { icon:'📨', provider:'OpenAI' },
+  'Zentryx - Análisis de Hojas de Vida': { icon:'👥', provider:'Gemini' },
+  'Zentryx - Enviar Documento por Correo': { icon:'📧', provider:'OpenAI' },
+  'Zentryx - Monitor PQR por Email': { icon:'📩', provider:'Gemini' },
+  'Zentryx - Monitor Cartas de Renuncia': { icon:'📤', provider:'Gemini' },
+};
+
+// Formulario dinámico
+const DEFAULT_FORM = {
+  fields: [
+    {name:'input', label:'Entrada de datos (JSON)', type:'textarea', full:true, placeholder:'{"key": "value"}'}
+  ],
+  wrap: d => {
+    try { return JSON.parse(d.input); } catch { return {body: d.input}; }
+  }
+};
+
+const SPECIFIC_FORMS = {
+  'Zentryx - Análisis de Excusas': {
+    fields: [
+      {name:'employeeName',label:'Nombre del empleado',type:'text',placeholder:'Juan Pérez'},
+      {name:'type',label:'Tipo de ausencia',type:'select',options:['incapacidad','calamidad','permiso','licencia','otro']},
+      {name:'startDate',label:'Fecha inicio',type:'date'},
+      {name:'endDate',label:'Fecha fin',type:'date'},
+      {name:'documentDescription',label:'Descripción del documento',type:'textarea',full:true, placeholder:'Certificado médico...'},
+    ],
+    wrap: d => ({body:d})
+  },
+  'Zentryx - Gestion de PQR': {
+    fields: [
+      {name:'type',label:'Tipo',type:'select',options:['pregunta','queja','reclamo']},
+      {name:'priority',label:'Prioridad',type:'select',options:['low','medium','high']},
+      {name:'subject',label:'Asunto',type:'text'},
+      {name:'description',label:'Descripción',type:'textarea',full:true},
+    ],
+    wrap: d => ({body:d})
+  }
+};
+
+let workflows = [];
+let currentFlow = null;
+
+window.addEventListener('load', async () => {
+  await fetchConfig();
+  loadKeys();
+  await fetchWorkflows();
+  startStatsPolling();
+});
+
+async function startStatsPolling() {
+  updateStats();
+  setInterval(updateStats, 3000);
+}
+
+async function updateStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    const limit = 1000000; // 1M tokens limit for visualization
+    const percent = Math.min((data.tokensUsed / limit) * 100, 100);
+    
+    document.getElementById('tokenTotal').textContent = `${(data.tokensUsed / 1000).toFixed(1)}K TKN`;
+    document.getElementById('tokenPercent').textContent = `${percent.toFixed(1)}%`;
+    document.getElementById('tokenBarFill').style.width = `${percent}%`;
+    
+    if (percent > 80) document.getElementById('tokenBarFill').style.background = 'var(--red)';
+    else if (percent > 50) document.getElementById('tokenBarFill').style.background = 'var(--yellow)';
+    else document.getElementById('tokenBarFill').style.background = 'var(--green)';
+    
+  } catch(e) { console.error('Stats error:', e); }
+}
+
+async function fetchConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    const name = data.projectName || '';
+    document.title = (name ? name + ' ' : '') + 'Pythia';
+    document.getElementById('brandName').textContent = name ? name.toUpperCase() + ' ' : '';
+  } catch(e) { console.error(e); }
+}
+
+async function fetchWorkflows() {
+  try {
+    const res = await fetch('/api/workflows');
+    workflows = await res.json();
+    document.getElementById('flowCount').textContent = workflows.length;
+    document.getElementById('flowCountBadge').textContent = `${workflows.length} flujos detectados`;
+    renderGrid();
+  } catch(e) {
+    document.getElementById('flowGrid').innerHTML = `<p style="color:var(--red)">ERROR DE CONEXIÓN</p>`;
+  }
+}
+
+function renderGrid() {
+  const grid = document.getElementById('flowGrid');
+  grid.innerHTML = workflows.map(w => {
+    const info = FLOW_FORMS[w.name] || { icon:'◆', provider: w.aiModel || 'System' };
+    return `
+    <div class="flow-card" onclick="openModal('${w.name.replace(/'/g,"\\'")}')">
+      <div class="flow-icon">${info.icon}</div>
+      <div class="flow-info">
+        <div class="flow-name">${w.name.replace('Zentryx - ','')}</div>
+        <div class="flow-desc">${w.name}</div>
+        <div class="flow-meta"><span class="provider">${info.provider}</span> · ${w.nodeCount} nodos</div>
+      </div>
+      <div class="flow-right">
+        <span class="status-badge activo">ONLINE</span>
+        <button class="btn-run" onclick="event.stopPropagation();openModal('${w.name.replace(/'/g,"\\'")}')">EJECUTAR</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openModal(name) {
+  currentFlow = workflows.find(w => w.name === name);
+  if (!currentFlow) return;
+  document.getElementById('modalTitle').textContent = `> RUN: ${name}`;
+  document.getElementById('overlay').classList.add('open');
+  renderModalBody();
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('overlay'))
+    document.getElementById('overlay').classList.remove('open');
+}
+
+function renderModalBody() {
+  const fd = SPECIFIC_FORMS[currentFlow.name] || DEFAULT_FORM;
+  const fields = fd.fields.map(f => {
+    const id = `field_${f.name}`;
+    let input = '';
+    if (f.type === 'select')
+      input = `<select id="${id}">${f.options.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    else if (f.type === 'textarea')
+      input = `<textarea id="${id}" placeholder="${f.placeholder||''}" rows="3"></textarea>`;
+    else
+      input = `<input id="${id}" type="${f.type}" placeholder="${f.placeholder||''}"/>`;
+    return `<div class="form-group ${f.full?'full':''}" ><label>${f.label}</label>${input}</div>`;
+  }).join('');
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-grid">${fields}</div>
+    <button class="btn-execute" id="btnExec" onclick="executeFlow()">
+      <span id="execLabel">EJECUTAR SECUENCIA</span>
+    </button>
+    <div>
+      <p style="font-family:'Share Tech Mono';font-size:11px;color:var(--text-dim);margin-bottom:8px">// TERMINAL OUTPUT</p>
+      <div class="logs-panel" id="logsPanel"></div>
+    </div>
+    <div id="resultPanel"></div>
+  `;
+}
+
+async function executeFlow() {
+  const fd = SPECIFIC_FORMS[currentFlow.name] || DEFAULT_FORM;
+  const raw = {};
+  fd.fields.forEach(f => { raw[f.name] = document.getElementById(`field_${f.name}`)?.value || ''; });
+  const inputData = fd.wrap(raw);
+
+  const btn = document.getElementById('btnExec');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner"></div> PROCESANDO...`;
+
+  const logsPanel = document.getElementById('logsPanel');
+  logsPanel.innerHTML = '';
+
+  function addLog(entry) {
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.innerHTML = `<span class="log-time">${entry.time}</span><span class="log-${entry.type||'info'}">${entry.msg}</span>`;
+    logsPanel.appendChild(div);
+    logsPanel.scrollTop = logsPanel.scrollHeight;
+  }
+
+  try {
+    const res = await fetch('/api/execute', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        workflowName: currentFlow.name,
+        inputData,
+        openaiKey: document.getElementById('openaiKey').value,
+        geminiKey: document.getElementById('geminiKey').value,
+      })
+    });
+    const data = await res.json();
+    (data.logs || []).forEach(addLog);
+    const resultPanel = document.getElementById('resultPanel');
+    if (data.success) {
+      resultPanel.innerHTML = `
+        <div class="result-panel">
+          <div class="result-header">SALIDA EXITOSA</div>
+          <pre>${JSON.stringify(data.result, null, 2)}</pre>
+        </div>`;
+    } else {
+      resultPanel.innerHTML = `
+        <div class="result-panel">
+          <div class="result-header" style="color:var(--red)">ERROR EN LA SECUENCIA</div>
+          <pre style="color:var(--red)">${data.error}</pre>
+        </div>`;
+    }
+  } catch(e) {
+    addLog({time:'--:--:--',msg:`ERROR: ${e.message}`,type:'error'});
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `REINTENTAR SECUENCIA`;
+}
+
+function saveKeys() {
+  localStorage.setItem('zfr_openai', document.getElementById('openaiKey').value);
+  localStorage.setItem('zfr_gemini', document.getElementById('geminiKey').value);
+  alert('Claves guardadas localmente.');
+}
+function loadKeys() {
+  document.getElementById('openaiKey').value = localStorage.getItem('zfr_openai') || '';
+  document.getElementById('geminiKey').value = localStorage.getItem('zfr_gemini') || '';
+}
+
+// ─── Navegación de UI ──────────────────────────────────────────────────────
+document.querySelectorAll('.nav-item, .s-icon').forEach(el => {
+  el.addEventListener('click', () => {
+    // Quitar active de hermanos
+    const selector = el.classList.contains('nav-item') ? '.nav-item' : '.s-icon';
+    document.querySelectorAll(selector).forEach(item => item.classList.remove('active'));
+    el.classList.add('active');
+    
+    // Cambiar título si es nav-item
+    if (el.classList.contains('nav-item')) {
+      const title = el.textContent.trim().toUpperCase();
+      document.querySelector('.section-title').textContent = title;
+      // Si no es "Flujos", ocultar el grid por ahora (simulación)
+      document.getElementById('flowGrid').style.opacity = title.includes('FLUJOS') ? '1' : '0.3';
+    }
+  });
+});
+</script>
+</body>
+</html>
